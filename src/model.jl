@@ -224,23 +224,23 @@ end
 
 function viral_lysis(prms, B, V, dVdt, dBdt, d_gain_vly, t)
 
-    # II, JJ = get_nonzero_axes(prms.VM)
+    II, JJ = get_nonzero_axes(prms.VM)
 
-    # for j = axes(II, 1)
-    #     lysis_Bi = prms.vly .* VM[II[j], JJ[j]] .* B[JJ[j],:] .* V[II[j],:]
-    #     dBdt[JJ[j],:] += -lysis_Bi
-    #     dVdt[II[j],:] += lysis_Bi .* prms.vbs 
-    #     # dNdt += -(lysis_Bi .* prms.vbs)
-    #     d_gain_vly += lysis_Bi
-    # end
-    #NOTE as a first approximation, 30% of the lysed B goes into V growth, and 70% is returned to D 
+    for j = axes(II, 1)
+        lysis_Bi = prms.vly .* VM[II[j], JJ[j]] .* B[JJ[j],:] .* V[II[j],:]
+        v_growth = lysis_Bi .* 0.4
+        d_gain_vly += lysis_Bi * 0.6
+        dBdt[JJ[j],:] += -lysis_Bi
+        dVdt[II[j],:] += v_growth
+    end
+    # NOTE as a first approximation, 30% of the lysed B goes into V growth, and 70% is returned to D 
     # leaving out burst size for now as it was just killing all B fast
     # lysis = prms.vly .* B .* V .* prms.vbs
-    lysis = prms.vly .* B .* V 
-    v_growth = lysis .* 0.4
-    d_gain_vly += [sum(lysis) * 0.6]
-    dVdt += [sum(v_growth)]
-    dBdt += -lysis
+    # lysis = prms.vly .* B .* V 
+    # v_growth = lysis .* 0.4
+    # d_gain_vly += [sum(lysis) * 0.6]
+    # dVdt += [sum(v_growth)]
+    # dBdt += -lysis
 
     return dVdt, dBdt, d_gain_vly
 
@@ -260,10 +260,10 @@ end
 
 function bacterial_mortality(prms, B, dBdt, d_gain_mort, lysis, t=0)
 
-    if lysis == 0
-        bmort = (prms.m_lb .+ prms.m_qb .* B) .* B
-    else
+    if lysis == 1
         bmort = prms.m_lb .* B
+    else
+        bmort = (prms.m_lb .+ prms.m_qb .* B) .* B
     end
 
     dBdt += -bmort

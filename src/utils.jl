@@ -10,39 +10,10 @@ using SparseArrays
 function message(v::String, nd::Int64=0, nb::Int64=0, np::Int64=0, nz::Int64=0, fsaven::String="")
 
     m = Dict(
-        "START" => "\n -------------------------------- STARTING PROGRAM ----------------------------------- \n",
-        "DEF" => """Default values: \n tt = 2 \n nrec = 100 \n nn = 1 \n np = 1 \n nz = 2 \n nb = 6 \n nd = 3 
-                    pulse freq = 0 \n rsource = 0.1 \n rsink = 1.0 \n y_i = conts. 0.3 \n SW = const. 1.0 \n vmax_i = ordered \n """,
-        "DF1" => ["Use defaults", "Select custom params"],
-        "DF2" => "Proceed with defaults or select custom params?",
-        "T" => "\nEnter simulation run time (tt - number of days): ",
-        "REC" => "Enter number of timepoints to record (nrec): ",
-        "OM" => "Enter number of organic matter pools (nd): ",
-        "BA" => "Enter number of bacteria populations (nb): ",
-        "NPZ" => """\n 
-        -----------------------------------
-        Currently running with default of: 
-        1 phyto (np) \n  2 zoo (nz) \n  1 inorganic matter pool (nn) 
-        -----------------------------------""",
-        "CM" => "\n >> Building consumption matrix with $nd OM pools and $nb bac populations << ",
-        "GM" => "\n >> Building grazing matrix with $np phy, $nb bac and $nz zoo populations << ",
-        "Y1" => ["Equal for all bacteria", "Randomised"],
-        "Y2" => "\n Select yield rates for bacteria populations (y_i):",
-        "SW1" => ["Equal distribution", "Randomised"],
-        "SW2" => "\n Select supply weight for OM pools (SW):",
-        "SUB" => "\n SETTING SUBSTRATE TRAITS \n -------------------------- ",
-        "UP1" => ["Ordered assignment", "Randomly selected along log range"],
-        "UP2" => "Select max uptake rate (vmax_i, 1/d):",
-        "S1"   => "\nEnter OM supply rate (mmol C/m3, decimal): ",
-        "S2"   => "\nEnter OM sinking rate (1/day, decimal): ",
-        "MIC" => "\n SETTING MICROBIAL TRAITS \n --------------------------",
-        "GA1" => ["Tradeoff", "Constant affinity"],
-        "GA2" => "Apply bacterial growth rate-affinity tradeoff?",
-        "ENV" => "\n SETTING NUTRIENT SUPPLY \n -------------------------- ",
-        "PU2" => "Simulate winter or summer conditions?",
-        "PU1" => ["Winter", "Summer"],
-        "SV" => "Saving to: $fsaven",
-
+        "LY1" => "\nChoose lysis type:",
+        "LY2" => ["Explicit", "Implicit"],
+        "TM1" => "\nSelect Simulation Runtime:",
+        "TM2" => ["2 years (days=732)", "10 years (days=3660)", "50 years (days=18300)", "100 years (days=36600)"],
     )
 
     return m["$v"]
@@ -54,7 +25,7 @@ function set_savefiles(launch_time, years, nn, np, nz, nb, nd, nv, lysis=0)
 
     fsave = "results/outfiles/"
 
-    if lysis == 0
+    if lysis != 1
         fsaven = string(fsave, Dates.format(launch_time, "yymmdd_HH:MM"), "_$(years)y_$(nn)N$(np)P$(nz)Z$(nb)B$(nd)D$(nv)V.nc")
     else
         fsaven = string(fsave, Dates.format(launch_time, "yymmdd_HH:MM"), "_$(years)y_$(nn)N$(np)P$(nz)Z$(nb)B$(nd)D$(nv)V_L.nc")
@@ -65,25 +36,90 @@ function set_savefiles(launch_time, years, nn, np, nz, nb, nd, nv, lysis=0)
 end
 
 
-function get_defaults()
+function set_logger(launch_time)
 
-    tt = 5
-    nrec = 100 
-    nn = 1
-    np = 1
-    nz = 2
-    nb = 6
-    nd = 3
-    y_i = ones(nd)*0.3 
-    SW = ones(nd) 
-    vmax_i = ordered_vmax(nd)
-    pulse = 1
-    rsource = 0.1
-    rsink = 1.0
+    loginfo = string(Dates.format(launch_time, "yyyymmdd_HHMM"), ".log")
+    logger = activate_logger(loginfo)
 
-    return tt, nrec, nd, nb, np, nz, nn, y_i, SW, vmax_i, rsource, rsink, pulse
+    return logger
 
 end
+
+
+function activate_logger(loginfo)
+
+    logger = TeeLogger(
+        MinLevelLogger(FileLogger("logs/$loginfo"), Logging.Info),
+        MinLevelLogger(FileLogger("logs/error.log"), Logging.Warn),
+    ); 
+    
+    global_logger(logger)
+
+    return logger 
+
+end
+
+function log_params(prms, lysis)
+
+    @info(
+    """Model Params: 
+    days:           $(prms.days)
+    ts/day (dt):    $(prms.dt)
+    total ts (nt):  $(prms.nt)                    
+    nn:             $(prms.nn)                    
+    np:             $(prms.np)                     
+    nz:             $(prms.nz)        
+    nb:             $(prms.nb)         
+    nd:             $(prms.nd) 
+    nv:             $(prms.nv)   
+    nIC:            $(prms.nIC[1])                        
+    pIC:            $(prms.pIC[1])
+    zIC:            $(prms.zIC[1])
+    bIC:            $(prms.bIC[1])
+    dIC:            $(prms.dIC[1])
+    vIC:            $(prms.vIC[1])
+    vmax_i:         $(prms.vmax_i)
+    vmax_ij:        $(prms.vmax_ij)
+    umax_i:         $(prms.umax_i)
+    umax_ij:        $(prms.umax_ij)
+    Kp_i:           $(prms.Kp_i)
+    Kp_ij:          $(prms.Kp_ij)
+    Km_i:           $(prms.Km_i)
+    Km_ij:          $(prms.Km_ij)
+    y_ij:           $(prms.y_ij[1])
+    K_g:            $(prms.K_g[1])
+    g_max:          $(prms.g_max[1])
+    γ:              $(prms.γ[1])
+    m_lp:           $(prms.m_lp[1])
+    m_qp:           $(prms.m_qp[1])
+    m_lb:           $(prms.m_lb[1])
+    m_qb:           $(prms.m_qb[1])
+    m_lz:           $(prms.m_lz[1])
+    m_qz:           $(prms.m_qz[1])
+    rsource:        $(prms.rsource)
+    rsink:          $(prms.rsink)
+    om_dist_mort:   $(prms.om_dist_mort)  
+    om_dist_lys:    $(prms.om_dist_lys)   
+    om_dist_vde:    $(prms.om_dist_vde) 
+    Fg_p:           $(prms.Fg_p)
+    Fg_b:           $(prms.Fg_b) 
+    lysis:          $(lysis)     # 0 = false, 1 = true
+    savefile:       $(prms.fsaven)
+    """) 
+    
+    print_info(prms)
+
+end
+
+
+function print_info(prms)
+
+    @printf("\n np = %5.0f \n nb = %5.0f \n nz = %5.0f \n nn = %5.0f \n nd = %5.0f \n nv = %5.0f \n days = %5.0f \n\n", prms.np, prms.nb, prms.nz, prms.nn, prms.nd, prms.nv, prms.days)
+    println("File will be saved as: ", prms.fsaven)
+    println("nt = ", prms.nt)
+
+end
+
 
 
 function bacteria_num()
