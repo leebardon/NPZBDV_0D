@@ -228,8 +228,8 @@ function viral_lysis(prms, B, V, dVdt, dBdt, d_gain_vly, t)
 
     for j = axes(II, 1)
         lysis_Bi = prms.vly .* VM[II[j], JJ[j]] .* B[JJ[j],:] .* V[II[j],:]
-        v_growth = lysis_Bi .* 0.4
-        d_gain_vly += lysis_Bi * 0.6
+        v_growth = lysis_Bi .* 0.3
+        d_gain_vly += lysis_Bi * 0.7
         dBdt[JJ[j],:] += -lysis_Bi
         dVdt[II[j],:] += v_growth
     end

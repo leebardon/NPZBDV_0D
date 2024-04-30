@@ -13,14 +13,32 @@ function plot_results(outdir, outfile, lysis, pulse=0)
     n, p, z, b, d, v, timet = get_plot_variables(ds, ["n", "p", "z", "b", "d", "v", "timet"])
 
     f1 = plot_total(n, p, z, b, d, v, timet)
-    f2 = plot_all_pzbv(n, p, z, b, d, v, timet)
+    pb, pp = lysing(n, p, z, b, d, v, lysis)
+    # f2 = plot_all_pzbv(n, p, z, b, d, v, timet)
     f3 = plot_individual(n, p, z, b, d, v, timet)
     f4 = plot_total_pzbv(n, p, z, b, d, v, timet)
 
     savefig(f1,"results/plots/$(file)_1.pdf")
-    savefig(f2,"results/plots/$(file)_2.pdf")
+    # savefig(f2,"results/plots/$(file)_2.pdf")
+    savefig(pb,"results/plots/lysing/$(file)_B.pdf")
+    savefig(pp,"results/plots/lysing/$(file)_P.pdf")
     savefig(f3,"results/plots/$(file)_3.pdf")
     savefig(f4,"results/plots/$(file)_4.pdf")
+
+end
+
+function lysing(n, p, z, b, d, v, lysis)
+
+    B = b[:, end];
+    P = p[:, end];
+    nb = collect(1:30);
+    np = collect(1:6);
+
+    lysis == 1 ? tit="Explicit Lysing" : tit="Implicit Lysing"
+    pb = plot(nb, B, title=tit, xlabel="B #", ylabel = "Conc.", label="B", grid=false, lw=5);
+    pp = plot(np, P, title=tit, xlabel="P #", ylabel = "Conc.", label="P", grid=false, lw=5, lc="seagreen"); 
+
+    return pb, pp
 
 end
 
