@@ -21,33 +21,21 @@ module NPZBDV_0D
 
 
     #------------------------------------------------------------------------------------------------------------#
-    #   SELECT LYSIS TYPE 
+    #   SELECT LYSIS & GRAZING TYPE 
     #------------------------------------------------------------------------------------------------------------#
         lysis = request(message("LY1"), RadioMenu(message("LY2")))
+        graze = request(message("GZ1"), RadioMenu(message("GZ2")))
         pulse = 0
 
     #------------------------------------------------------------------------------------------------------------#
     #   SELECT SIMULATION TIME  
     #------------------------------------------------------------------------------------------------------------#
-        simulation_time = request(message("TM1"), RadioMenu(message("TM2")))
-        if simulation_time == 1
-            years = 2
-            days = 732
-            nrec = 14640
-        elseif simulation_time == 2
-            years = 10
-            days = 3660
-            nrec = 73200
-        elseif simulation_time == 3
-            years = 50
-            days = 18300
-            nrec = 366000
-        else 
-            years = 100
-            days = 36600
-            nrec = 732000
-        end
+        println(message("TM"))
+        user_input = readline()
+        years = parse(Int64, user_input)
 
+        days = years * 366
+        nrec = days * 20
         dt = 0.01
         nt = Int(days/dt)
 
@@ -57,7 +45,6 @@ module NPZBDV_0D
         files = readdir("src/prescribed")
         f = request("\nSelect model to run:", RadioMenu(files))
         include("prescribed/$(files[f])")
-
     
     #------------------------------------------------------------------------------------------------------------#
     #   RUN MODEL

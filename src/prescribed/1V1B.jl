@@ -14,9 +14,9 @@
         nn = 1
         np = 6
         nz = 2
-        nb = 10
+        nb = 2
         nd = 5
-        nv = 1  
+        nv = 2  
 
         fsaven = set_savefiles(now(), years, nn, np, nz, nb, nd, nv, lysis)
         logger = set_logger(now())
@@ -39,51 +39,52 @@
     # -----------------------------------------------------------------------------------------------------------#
     #                                    HETEROTROPHIC BACTERIA PARAMS
     #------------------------------------------------------------------------------------------------------------#
-        CM = [
-                1  0  0  0  0  1  0  0  0  0 
-                0  1  0  0  0  0  1  0  0  0 
-                0  0  1  0  0  0  0  1  0  0 
-                0  0  0  1  0  0  0  0  1  0 
-                0  0  0  0  1  0  0  0  0  1 
-              ] 
+        CM = [0 0 
+              0 0
+              1 1
+              0 0
+              0 0] 
         
         y_i = ones(nd)*0.3
         y_ij = broadcast(*, y_i, CM) 
     
-        Fg_b = [1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0]
+        Fg_b = [1.0, 1.0]
         Fa_b = 1. .- Fg_b      
     
-        umax_i = [1., 1., 1., 1., 1., 1., 1., 1.]      # Fg_b and umax_i are dummy vals - already provided from Emily's previous work (trade-off applied)
+        umax_i = [1.0, 1.0]      # Fg_b and umax_i are dummy vals - already provided from Emily's previous work (trade-off applied)
         Km_i = umax_i./10 
     
-        umax_ij =  [
-                        32.0  0  0  0  0  22.0  0  0  0  0 
-                        0  5.6  0  0  0  0  4.0  0  0  0 
-                        0  0  1.0  0  0  0  0  0.71  0  0 
-                        0  0  0  0.18  0  0  0  0  0.13  0 
-                        0  0  0  0  0.029  0  0  0  0  0.022 
-                    ] 
+        umax_ij =  [32.0  22.0
+                    5.6  4.0
+                    1.0  0.71
+                    0.18  0.13
+                    0.029  0.022] 
     
-        Km_ij = [
-                    1.54  0  0  0  0  0.7  0  0  0  0 
-                    0  0.28  0  0  0  0  0.124  0  0  0 
-                    0  0  0.048  0  0  0  0  0.022  0  0 
-                    0  0  0  0.0086  0  0  0  0  0.004  0 
-                    0  0  0  0  0.00154  0  0  0  0  0.0007 
-                ]  
-
+        Km_ij = [1.54  0.7
+                 0.28  0.124
+                 0.048  0.022
+                 0.0086  0.004
+                 0.00154 0.0007]
     
     # -----------------------------------------------------------------------------------------------------------#
-    #                                       ZOOPLANKTON PARAMS 
+    #                ZOOPLANKTON PARAMS 
     #------------------------------------------------------------------------------------------------------------#
-        # GrM - first 6 cols are phyto, next 10 dom consuming bacteria, rows are zoo
-        GrM = [ 1.0  1.0  1.0  1.0  1.0  1.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0 
-                0.0  0.0  0.0  0.0  0.0  0.0  1.0  1.0  1.0  1.0  1.0  1.0  1.0  1.0  1.0  1.0
-            ] ;
-    
-        g_max = ones(nz)
-        K_g = ones(nz)*1.0
-        γ = ones(nz)*0.3
+        if graze == 1# GrM - first 6 cols are phyto, next 1 dom consuming bacteria, rows are zoo
+            GrM = [ 1.0  1.0  1.0  1.0  1.0  1.0  0.0  0.0
+                    0.0  0.0  0.0  0.0  0.0  0.0  1.0  1.0 
+                ] ;
+        
+            g_max = ones(nz)
+            K_g = ones(nz)*1.0
+            γ = ones(nz)*0.3
+            zIC = ones(nz)*0.01
+        else 
+            GrM = fill(0, (nz, (np + nb)))
+            g_max = zeros(nz)
+            K_g = zeros(nz)
+            γ = zeros(nz)
+            zIC = zeros(nz) 
+        end
 
 
     # -----------------------------------------------------------------------------------------------------------#
@@ -104,9 +105,11 @@
     #------------------------------------------------------------------------------------------------------------#
         nIC = ones(nn)*5.0
         pIC = ones(np)*0.1
-        zIC = ones(nz)*0.01
         dIC = ones(nd)*0.1
         bIC = ones(nb)*0.01
+        bIC[2] = 0.0
+
+        
 
     # -----------------------------------------------------------------------------------------------------------#
     #   ORGANIC MATTER
@@ -124,8 +127,9 @@
     #                                       VIRUS PARAMS 
     #------------------------------------------------------------------------------------------------------------#
         if lysis == 1
-            # start with 1 virus consuming all B
-            VM = [ 1  1  1  1  1  1  1  1  1  1 ]
+            # virus for each B
+            VM = [ 1  0
+                   0  1 ]
             
             # vly = 4*10e−6         # lysis rate 8*10e-12 L/virus/day (weitz et al 2015) or 2.17 * 10^-11 (2.17*10e−14 m3/virus/day - Xie et al 2022)
             vly = 2.0
@@ -134,7 +138,7 @@
             vIC = ones(nv)*0.1
             # how much nitrogen per virus? get a virus quota per nitrogen i.e. mmol N / virus then convert back to mmol/day
         else 
-            VM = fill(0, (5, 10))
+            VM = fill(0, (nd, nb))
             vly = 0.0
             vbs = 0                
             vde = 0.0   

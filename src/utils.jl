@@ -12,8 +12,9 @@ function message(v::String, nd::Int64=0, nb::Int64=0, np::Int64=0, nz::Int64=0, 
     m = Dict(
         "LY1" => "\nChoose lysis type:",
         "LY2" => ["Explicit", "Implicit"],
-        "TM1" => "\nSelect Simulation Runtime:",
-        "TM2" => ["2 years (days=732)", "10 years (days=3660)", "50 years (days=18300)", "100 years (days=36600)"],
+        "GZ1" => "\nInclude grazers?",
+        "GZ2" => ["yes", "no"],
+        "TM" => "\nEnter simulation runtime (years):",
     )
 
     return m["$v"]
@@ -103,7 +104,7 @@ function log_params(prms, lysis)
     om_dist_vde:    $(prms.om_dist_vde) 
     Fg_p:           $(prms.Fg_p)
     Fg_b:           $(prms.Fg_b) 
-    lysis:          $(lysis)     # 0 = false, 1 = true
+    lysis:          $(lysis)     # 1 = explicit, 2 = implicit
     savefile:       $(prms.fsaven)
     """) 
     

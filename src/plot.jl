@@ -31,12 +31,13 @@ function lysing(n, p, z, b, d, v, lysis)
 
     B = b[:, end];
     P = p[:, end];
-    nb = collect(1:30);
-    np = collect(1:6);
+    np, nb = get_size([p,b])
+    xb = collect(1:nb);
+    xp = collect(1:np);
 
     lysis == 1 ? tit="Explicit Lysing" : tit="Implicit Lysing"
-    pb = plot(nb, B, title=tit, xlabel="B #", ylabel = "Conc.", label="B", grid=false, lw=5);
-    pp = plot(np, P, title=tit, xlabel="P #", ylabel = "Conc.", label="P", grid=false, lw=5, lc="seagreen"); 
+    pb = plot(xb, B, title=tit, xlabel="B #", ylabel = "Conc.", label="B", grid=false, lw=5);
+    pp = plot(xp, P, title=tit, xlabel="P #", ylabel = "Conc.", label="P", grid=false, lw=5, lc="seagreen"); 
 
     return pb, pp
 
