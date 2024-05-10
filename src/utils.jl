@@ -288,7 +288,7 @@ function print_info(start_time, prms, nt)
 end
 
 
-function update_tracking_arrs(track_n, track_p, track_z, track_b, track_d, track_v, track_time, ntemp, ptemp, ztemp, btemp, dtemp, vtemp, t, trec, prms)
+function update_tracking_arrs(track_n, track_c, track_p, track_z, track_b, track_d, track_v, track_time, ntemp, ctemp, ptemp, ztemp, btemp, dtemp, vtemp, t, trec, prms)
 
     j = Int(t÷trec + 1)
     t_id = t.*prms.dt
@@ -296,18 +296,19 @@ function update_tracking_arrs(track_n, track_p, track_z, track_b, track_d, track
     track_b[:,j] .= btemp 
     track_z[:,j] .= ztemp 
     track_n[:,j] .= ntemp 
+    track_c[:,j] .= ctemp 
     track_d[:,j] .= dtemp
     track_v[:,j] .= vtemp
     track_time[j] = t_id 
 
     @printf("Day %7.1f out of %5.0f = %4.0f%% done at %s \n", t_id, prms.days, t_id/prms.days*100, now())
 
-    return track_n, track_p, track_z, track_b, track_d, track_v, track_time
+    return track_n, track_c, track_p, track_z, track_b, track_d, track_v, track_time
 
 end
 
 
-function savetoNC(fsaven, p, b, z, n, d, v, timet, tst, tfn, prms, pulse)
+function savetoNC(fsaven, p, b, z, n, c, d, v, timet, tst, tfn, prms, pulse)
 
     outdir = "/home/lee/Dropbox/Development/NPZBDV_0D/"
     path = joinpath(outdir, fsaven) 
@@ -326,6 +327,7 @@ function savetoNC(fsaven, p, b, z, n, d, v, timet, tst, tfn, prms, pulse)
     defDim(f,"nb", prms.nb)
     defDim(f,"nz", prms.nz)
     defDim(f,"nn", prms.nn)
+    defDim(f,"nc", prms.nc)
     defDim(f,"nd", prms.nd)
     defDim(f,"nv", prms.nv)
 
@@ -345,51 +347,55 @@ function savetoNC(fsaven, p, b, z, n, d, v, timet, tst, tfn, prms, pulse)
      # simulated results
      w = defVar(f,"p",Float64,("np","nrec"))
      w[:,:] = p
-     w.attrib["units"] = "mmol/m3 C biomass"
+     w.attrib["units"] = "mmol/m3 N biomass"
  
      w = defVar(f,"b",Float64,("nb","nrec"))
      w[:,:] = b
-     w.attrib["units"] = "mmol/m3 C biomass"
+     w.attrib["units"] = "mmol/m3 N biomass"
  
      w = defVar(f,"z",Float64,("nz","nrec"))
      w[:,:] = z
-     w.attrib["units"] = "mmol/m3 C biomass"
+     w.attrib["units"] = "mmol/m3 N biomass"
      
      w = defVar(f,"n",Float64,("nn","nrec"))
      w[:,:] = n
+     w.attrib["units"] = "mmol/m3 N OM"
+
+     w = defVar(f,"c",Float64,("nc","nrec"))
+     w[:,:] = c
      w.attrib["units"] = "mmol/m3 C OM"
  
      w = defVar(f,"d",Float64,("nd","nrec"))
      w[:,:] = d
-     w.attrib["units"] = "mmol/m3 C OM"
+     w.attrib["units"] = "mmol/m3 N OM"
 
      w = defVar(f,"v",Float64,("nv","nrec"))
      w[:,:] = v
-     w.attrib["units"] = "mmol/m3 C OM"
+     w.attrib["units"] = "mmol/m3 N OM"
      
     #  w = defVar(f,"uptake",Float64,("nd","nb"))
     #  w[:,:] = uptake
-    #  w.attrib["units"] = "mmol/m3 C per d; uptake matrix"
+    #  w.attrib["units"] = "mmol/m3 N per d; uptake matrix"
      
      # w = defVar(f,"pIC",Float64,("np",))
      # w[:,:] = prms.pIC
-     # w.attrib["units"] = "mmol/m3 C biomass"
+     # w.attrib["units"] = "mmol/m3 N biomass"
  
      # w = defVar(f,"bIC",Float64,("nb",))
      # w[:,:] = prms.bIC
-     # w.attrib["units"] = "mmol/m3 C biomass"
+     # w.attrib["units"] = "mmol/m3 N biomass"
  
      # w = defVar(f,"zIC",Float64,("nz",))
      # w[:,:] = prms.zIC
-     # w.attrib["units"] = "mmol/m3 C biomass"
+     # w.attrib["units"] = "mmol/m3 N biomass"
  
      # w = defVar(f,"nIC",Float64,("nn",))
      # w[:,:] = prms.nIC
-     # w.attrib["units"] = "mmol/m3 C OM"
+     # w.attrib["units"] = "mmol/m3 N OM"
  
      # w = defVar(f,"dIC",Float64,("nd",))
      # w[:,:] = prms.dIC
-     # w.attrib["units"] = "mmol/m3 C OM"
+     # w.attrib["units"] = "mmol/m3 N OM"
      
      w = defVar(f, "timet", Float64, ("nrec",))
      w[:] = timet

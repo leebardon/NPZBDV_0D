@@ -12,6 +12,7 @@
     #   CORE PARAMS 
     #------------------------------------------------------------------------------------------------------------#
         nn = 1
+        nc = 1
         np = 6
         nz = 2
         nb = 2
@@ -29,7 +30,7 @@
         Fg_p = [0.1, 0.25, 0.5, 0.68, 0.79, 0.91]      # fraction of proteome optimized to growth
         Fa_p = 1. .- Fg_p                              # fraction optimized to substrate affintiy
     
-        vmax_i = [0.5, 1.0, 2.0, 3.0, 4.0, 6.0]      # max growth rates (per day)
+        vmax_i = [0.5, 1.0, 2.0, 3.0, 4.0, 6.0]        # max growth rates (per day)
         Kp_i = vmax_i./10                              # half saturation of P_i
     
         vmax_ij = set_vmax_ij(nn, np, vmax_i, Fg_p)    # growth rate of P_i on N
@@ -105,6 +106,7 @@
     #   INITIAL CONDITIONS
     #------------------------------------------------------------------------------------------------------------#
         nIC = ones(nn)*5.0
+        cIC = ones(nc)*30.0
         pIC = ones(np)*0.1
         dIC = ones(nd)*0.1
         bIC = ones(nb)*0.01
@@ -113,8 +115,10 @@
     # -----------------------------------------------------------------------------------------------------------#
     #   ORGANIC MATTER
     #------------------------------------------------------------------------------------------------------------#
-        rsource = 0.1
-        rsink = 1.0
+        # rsource = 0.1
+        # rsink = 1.0
+        rsource = 0.0
+        rsink = 0.0
 
         # distribution of OM from mortality and lysis to detritus pools
         # viral decay amost entirely contributes to labile pool, lysis weighted to labile but includes both (walls & innards)
@@ -149,7 +153,7 @@
     #------------------------------------------------------------------------------------------------------------#
     params = Prms(
                 years, days, nrec, dt, nt, 
-                nn, np, nz, nb, nd, nv, nIC, pIC, zIC, bIC, dIC, vIC,
+                nn, nc, np, nz, nb, nd, nv, nIC, cIC, pIC, zIC, bIC, dIC, vIC,
                 vmax_i, vmax_ij, Kp_i, Kp_ij, m_lp, m_qp, CMp, Fg_p,
                 umax_i, umax_ij, Km_i, Km_ij, y_ij, m_lb, m_qb, CM, Fg_b,
                 g_max, K_g, γ, m_lz, m_qz, GrM, vly, vbs, vde, VM, 

@@ -49,7 +49,7 @@ module NPZBDV_0D
     #------------------------------------------------------------------------------------------------------------#
     #   RUN MODEL
     #------------------------------------------------------------------------------------------------------------#
-        N, P, Z, B, D, V, track_time, fsaven = run_NPZBDV(params, lysis)
+        N, C, P, Z, B, D, V, track_time, fsaven = run_NPZBDV(params, lysis)
         log_params(params, lysis)
 
         outdir = "/home/lee/Dropbox/Development/NPZBDV_0D/"

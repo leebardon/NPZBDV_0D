@@ -6,13 +6,15 @@ struct Prms
     nrec::Int64                    # num timepoints to record
     dt::Float64                    # length of one time-step
     nt::Int64                      # num days / num timesteps
-    nn::Int64                      # number of inorganic matter pools
+    nn::Int64                      # number of inorganic N pools
+    nc::Int64                      # number of inorganic C pools
     np::Int64                      # number of phytoplankton
     nz::Int64                      # number of zooplankton
     nb::Int64                      # number of bacteria
     nd::Int64                      # number of organic matter pools
     nv::Int64                      # number of viral pools 
     nIC::Array{Float64,1}          # initial condition for n at time 0
+    cIC::Array{Float64,1}          # initial condition for c at time 0
     pIC::Array{Float64,1}          # initial condition for p at time 0
     zIC::Array{Float64,1}          # initial condition for z at time 0
     bIC::Array{Float64,1}          # initial condition for b at time 0

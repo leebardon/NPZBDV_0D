@@ -10,13 +10,13 @@ function plot_results(outdir, outfile, lysis, pulse=0)
     file = replace(outfile, "out_0D_" => "", ".nc" => "", "results/outfiles/" => "")
     pulse == 1 ? season = "win" : season = "sum"
 
-    n, p, z, b, d, v, timet = get_plot_variables(ds, ["n", "p", "z", "b", "d", "v", "timet"])
+    n, c, p, z, b, d, v, timet = get_plot_variables(ds, ["n", "c", "p", "z", "b", "d", "v", "timet"])
 
-    f1 = plot_total(n, p, z, b, d, v, timet)
-    pb, pp = lysing(n, p, z, b, d, v, lysis)
+    f1 = plot_total(n, c, p, z, b, d, v, timet)
+    pb, pp = lysing(p, b, lysis)
     # f2 = plot_all_pzbv(n, p, z, b, d, v, timet)
-    f3 = plot_individual(n, p, z, b, d, v, timet)
-    f4 = plot_total_pzbv(n, p, z, b, d, v, timet)
+    f3 = plot_individual(n, c, p, z, b, d, v, timet)
+    f4 = plot_total_pzbv(p, z, b, v, timet)
 
     savefig(f1,"results/plots/$(file)_1.pdf")
     # savefig(f2,"results/plots/$(file)_2.pdf")
@@ -27,7 +27,7 @@ function plot_results(outdir, outfile, lysis, pulse=0)
 
 end
 
-function lysing(n, p, z, b, d, v, lysis)
+function lysing(p, b, lysis)
 
     B = b[:, end];
     P = p[:, end];
@@ -44,14 +44,14 @@ function lysing(n, p, z, b, d, v, lysis)
 end
 
 
-function plot_total(n, p, z, b, d, v, timet)
+function plot_total(n, c, p, z, b, d, v, timet)
 
-    all_n, all_p, all_z, all_b, all_d, all_v = sum_subtypes([n, p, z, b, d, v])
+    all_n, all_c, all_p, all_z, all_b, all_d, all_v = sum_subtypes([n, c, p, z, b, d, v])
 
     plt = plot(timet[:], [all_p[:], all_b[:], all_z[:], all_v[:]], lw=4, lc=[:limegreen :skyblue3 :coral3 :black], label=["P" "B" "Z" "V"], grid=false, alpha=0.7)
-    plot!(timet[:], [all_n[:], all_d[:]], lw=1.5, linecolor=[:darkgrey :olive], ls=:dashdot, label=["N" "D"], alpha=1.0)
+    plot!(timet[:], [all_n[:], all_c[:], all_d[:]], lw=1.5, linecolor=[:darkgrey :purple :olive], ls=:dashdot, label=["N" "DIC" "DOM"], alpha=1.0)
 
-    title!("Total NPZBDV over time")
+    title!("Total NCPZBDV over time")
     xlabel!("Time (days)")
     ylabel!("Concentration")
 
@@ -105,16 +105,16 @@ function plot_all_pzbv(n, p, z, b, d, v, timet)
 
 end
 
-function plot_individual(n, p, z, b, d, v, timet)
+function plot_individual(n, c, p, z, b, d, v, timet)
 
-    all_n, all_p, all_z, all_b, all_d, all_v = sum_subtypes([n, p, z, b, d, v])
+    all_n, all_c, all_p, all_z, all_b, all_d, all_v = sum_subtypes([n, c, p, z, b, d, v])
 
-    plt = plot(timet[:], [all_p[:], all_b[:], all_z[:], all_d[:], all_v[:], all_n[:]]; 
-    layout = 6, 
+    plt = plot(timet[:], [all_p[:], all_b[:], all_z[:], all_d[:], all_v[:], all_n[:], all_c[:]]; 
+    layout = 7, 
     linewidth = 3.5, 
     alpha=0.5,
     legend = false, 
-    title = ["Total P" "Total B" "Total Z" "Total D" "Total V" "Total N"]
+    title = ["Total P" "Total B" "Total Z" "Total DOM" "Total V" "Total N" "Total DIC"]
     )
 
     return plt
@@ -122,9 +122,9 @@ function plot_individual(n, p, z, b, d, v, timet)
 end
 
 
-function plot_total_pzbv(n, p, z, b, d, v, timet)
+function plot_total_pzbv(p, z, b, v, timet)
 
-    all_n, all_p, all_z, all_b, all_d, all_v = sum_subtypes([n,p, z, b, d, v])
+    all_p, all_z, all_b, all_v = sum_subtypes([p, z, b, v])
 
     plt = plot(timet[:], [all_p[:], all_b[:], all_z[:], all_v[:]], lw=5, lc=[:limegreen :skyblue3 :coral3 :black], label=["P" "B" "Z" "V"], 
     grid=false, alpha=0.7)
