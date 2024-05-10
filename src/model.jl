@@ -22,7 +22,8 @@ function run_NPZBDV(prms, lysis, pulse=0)
     track_p = Array{Float64,2}(undef, prms.np, nrec1) 
     track_z = Array{Float64,2}(undef, prms.nz, nrec1) 
     track_b = Array{Float64,2}(undef, prms.nb, nrec1) 
-    track_d = Array{Float64,2}(undef, prms.nd, nrec1)
+    track_dn = Array{Float64,2}(undef, prms.ndn, nrec1)
+    track_dc = Array{Float64,2}(undef, prms.ndc, nrec1)
     track_v = Array{Float64,2}(undef, prms.nv, nrec1)
     track_time = Array{Float64,1}(undef, nrec1)  
 
@@ -31,7 +32,8 @@ function run_NPZBDV(prms, lysis, pulse=0)
     track_p[:,1] .= prms.pIC
     track_z[:,1] .= prms.zIC
     track_b[:,1] .= prms.bIC
-    track_d[:,1] .= prms.dIC
+    track_dn[:,1] .= prms.dnIC
+    track_dc[:,1] .= prms.dcIC
     track_v[:,1] .= prms.vIC
 
     track_time[1] = 0
@@ -43,119 +45,120 @@ function run_NPZBDV(prms, lysis, pulse=0)
     ztemp = copy(prms.zIC) 
     ntemp = copy(prms.nIC) 
     ctemp = copy(prms.cIC) 
-    dtemp = copy(prms.dIC) 
+    dntemp = copy(prms.dnIC) 
+    dctemp = copy(prms.dcIC)
     vtemp = copy(prms.vIC) 
 
 
     for t = 1:prms.nt 
 
         # Solver - Runge-Kutta 4th order 
-        ntemp, ctemp, ptemp, ztemp, btemp, dtemp, vtemp = rk4(ntemp, ctemp, ptemp, ztemp, btemp, dtemp, vtemp, prms, t, lysis)
+        ntemp, ctemp, ptemp, ztemp, btemp, dntemp, dctemp, vtemp = rk4(ntemp, ctemp, ptemp, ztemp, btemp, dntemp, dctemp, vtemp, prms, t, lysis)
 
         if mod(t, trec)==0
 
-            track_n, track_c, track_p, track_z, track_b, track_d, track_v, track_time = update_tracking_arrs(track_n, track_c, track_p, track_z, track_b, track_d, track_v, track_time, 
-                                                                                ntemp, ctemp, ptemp, ztemp, btemp, dtemp, vtemp, t, trec, prms)
-            println("Total N: ", sum(ptemp) + sum(btemp) + sum(ntemp) + sum(dtemp) + sum(ztemp) + sum(vtemp))
-            println("Total DIC: ", sum(ctemp))
-        
+            track_n,track_c,track_p,track_z,track_b,track_dn,track_dc,track_v,track_time = update_tracking_arrs(track_n, track_c, track_p, track_z, track_b, track_dn, track_dc, track_v, track_time, 
+                                                                                ntemp, ctemp, ptemp, ztemp, btemp, dntemp, dctemp, vtemp, t, trec, prms)
+            
+            tot_n = sum(ntemp) + sum(dntemp) + ((sum(ptemp) + sum(btemp) + sum(ztemp) + sum(vtemp)) * (1/prms.CNr))
+            tot_c = sum(ctemp) + sum(dctemp) + ((sum(ptemp) + sum(btemp) + sum(ztemp) + sum(vtemp)) * (1-(1/prms.CNr)))
+            println("Total N: ", tot_n)
+            println("Total C: ", tot_c)
+            println("DIN: ", sum(ntemp))
+            println("DIC: ", sum(ctemp))
+
         end 
 
-        if pulse != 0
-            if prms.pulse == 1
-                # 1 = winter, pulse 5.0 every 10 days
-                if t % 1000 == 0
-                    pulse = nutrient_pulse(prms.pulse)
-                    dtemp .+= pulse     
-                    ntemp .+= pulse            
-                end
-            else 
-                # 2 = summer, pulse 2.0 every 30 days
-                if t % 3000 == 0
-                    pulse = nutrient_pulse(prms.pulse)
-                    dtemp .+= pulse     
-                    ntemp .+= pulse        
-                end
-            end
-        end
+        # if pulse != 0
+        #     if prms.pulse == 1
+        #         # 1 = winter, pulse 5.0 every 10 days
+        #         if t % 1000 == 0
+        #             pulse = nutrient_pulse(prms.pulse)
+        #             dtemp .+= pulse     
+        #             ntemp .+= pulse            
+        #         end
+        #     else 
+        #         # 2 = summer, pulse 2.0 every 30 days
+        #         if t % 3000 == 0
+        #             pulse = nutrient_pulse(prms.pulse)
+        #             dtemp .+= pulse     
+        #             ntemp .+= pulse        
+        #         end
+        #     end
+        # end
 
-        #calculate uptake and v for last timepoint
         if t == nt
-
-            # II, JJ = get_nonzero_axes(prms)
-            # v = zeros(prms.nd, prms.nb) 
-            # uptake = zeros(prms.nd, prms.nb) 
-        
-            # @inbounds for n = axes(II, 1)
-            #     v[II[n],JJ[n]] = prms.vmax_ij[II[n],JJ[n]] * prms.pen[JJ[n]] * dtemp[II[n]]/(dtemp[II[n]] + prms.Km_ij[II[n],JJ[n]]) 
-            #     uptake[II[n],JJ[n]] = v[II[n],JJ[n]] * btemp[JJ[n]]
-            # end  
             
             end_time = now() 
-
-            savetoNC(fsaven, track_p, track_b, track_z, track_n, track_c, track_d, track_v, track_time, start_time, end_time, prms, pulse)
+            savetoNC(fsaven, track_p, track_b, track_z, track_n, track_c, track_dn, track_dc, track_v, track_time, start_time, end_time, prms, pulse)
 
         end
     end 
 
 
-    return ntemp, ctemp, ptemp, ztemp, btemp, dtemp, vtemp, track_time, fsaven
+    return ntemp, ctemp, ptemp, ztemp, btemp, dntemp, dctemp, vtemp, track_time, fsaven
 
 end 
 
 
-function model_functions(N, DIC, P, Z, B, D, V, prms, t, lysis)
+function model_functions(N, C, P, Z, B, Dn, Dc, V, prms, t, lysis)
 
     dNdt = zeros(Float64, prms.nn)
-    dDICdt = zeros(Float64, prms.nc)
+    dCdt = zeros(Float64, prms.nc)
     dPdt = zeros(Float64, prms.np)
     dZdt = zeros(Float64, prms.nz)
     dBdt = zeros(Float64, prms.nb)
-    dDdt = zeros(Float64, prms.nd)
+    dDndt = zeros(Float64, prms.ndn)
+    dDcdt = zeros(Float64, prms.ndc)
     dVdt = zeros(Float64, prms.nv)
 
-    d_gain_mort = zeros(Float64, 1)
-    d_gain_vly = zeros(Float64, 1)
-    d_gain_vde = zeros(Float64, 1)
+    don_gain_mort = zeros(Float64, 1)
+    don_gain_vly = zeros(Float64, 1)
+    don_gain_vde = zeros(Float64, 1)
 
-    # DIN supply (turn off rsource and rsink to check if N conserving)
-    dNdt .+= prms.rsource
+    doc_gain_mort = zeros(Float64, 1)
+    doc_gain_vly = zeros(Float64, 1)
+    doc_gain_vde = zeros(Float64, 1)
+
+    # DIN and DIC supply (turn off rsource and rsink to check if conserving)
+    dNdt .+= prms.rsource * (1/prms.CNr)
+    dCdt .+= prms.rsource * (1-(1/prms.CNr))
 
     # phyto uptake 
-    dPdt, dNdt, dDICdt = phyto_uptake(prms, N, DIC, P, dNdt, dDICdt, dPdt, t)
+    dPdt, dNdt, dCdt = phyto_uptake(prms, N, C, P, dNdt, dCdt, dPdt, t)
 
     # bacteria uptake
-    dDdt, dBdt, dNdt, dDICdt = bacteria_uptake(prms, B, D, dDdt, dBdt, dNdt, dDICdt, t)
+    dDndt, dDcdt, dBdt, dNdt, dCdt = bacteria_uptake(prms, B, Dn, Dc, dDndt, dDcdt, dBdt, dNdt, dCdt, t)
 
     # zooplank grazing
-    dZdt, dNdt, dDICdt, dPdt, dBdt = grazing(prms, P, B, Z, dZdt, dNdt, dDICdt, dPdt, dBdt, t)
+    dZdt, dNdt, dCdt, dPdt, dBdt = grazing(prms, P, B, Z, dZdt, dNdt, dCdt, dPdt, dBdt, t)
 
     #phytoplankton mortality
-    dPdt, d_gain_mort = phyto_mortality(prms, P, dPdt, d_gain_mort, t)
+    dPdt, don_gain_mort, doc_gain_mort = phyto_mortality(prms, P, dPdt, don_gain_mort, doc_gain_mort, t)
 
     #bacterial mortality
-    dBdt, d_gain_mort = bacterial_mortality(prms, B, dBdt, d_gain_mort, lysis, t)
+    dBdt, don_gain_mort, doc_gain_mort = bacterial_mortality(prms, B, dBdt, don_gain_mort, doc_gain_mort, lysis, t)
     
     #zooplankton mortality 
-    dZdt, d_gain_mort = zoo_mortality(prms, Z, dZdt, d_gain_mort, t)
+    dZdt, don_gain_mort, doc_gain_mort = zoo_mortality(prms, Z, dZdt, don_gain_mort, doc_gain_mort, t)
 
     if lysis == 1
         # viral lysis (B only for now)
-        dVdt, dBdt, d_gain_vly = viral_lysis(prms, B, V, dVdt, dBdt, d_gain_vly, t)
+        dVdt, dBdt, don_gain_vly, doc_gain_vly = viral_lysis(prms, B, V, dVdt, dBdt, don_gain_vly, doc_gain_vly, t)
         #viral decay
-        dVdt, d_gain_vde = viral_decay(prms, V, dVdt, d_gain_vde, t)
+        dVdt, don_gain_vde, doc_gain_vde = viral_decay(prms, V, dVdt, don_gain_vde, doc_gain_vde, t)
     else
     end
 
     #sinking rate and split accumulated OM into nd pools
-    dDdt = total_change_in_d(prms, D, dDdt, d_gain_mort, d_gain_vly, d_gain_vde, t)
+    dDndt, dDcdt = total_change_in_d(prms, Dn, Dc, dDndt, dDcdt, don_gain_mort, doc_gain_mort, don_gain_vly, doc_gain_vly, don_gain_vde, doc_gain_vde, t)
 
-    return dNdt, dDICdt, dPdt, dZdt, dBdt, dDdt, dVdt
+    return dNdt, dCdt, dPdt, dZdt, dBdt, dDndt, dDcdt, dVdt
 
 end 
 
 
-function phyto_uptake(prms, N, DIC, P, dNdt, dDICdt, dPdt, t)
+function phyto_uptake(prms, N, C, P, dNdt, dCdt, dPdt, t)
     # NOTE phyto consume 6 C for every 1 N 
     # NOTE this could be set to scale according to environmental C:N ratio
 
@@ -163,89 +166,103 @@ function phyto_uptake(prms, N, DIC, P, dNdt, dDICdt, dPdt, t)
 
     for j = axes(II, 1)
         # uptake rate set by limiting nutrient (C or N)
-        uptake = P[JJ[j]] .* prms.vmax_ij[II[j],JJ[j]] .* min.(N ./ (N .+ prms.Kp_ij[II[j],JJ[j]]), DIC ./ (DIC .+ prms.Kp_ij[II[j],JJ[j]]))
-        dNdt .+= -uptake[1]
-        dDICdt .+= -uptake[1] .* prms.CNr
-        dPdt[JJ[j]] += uptake[1]
+        mu = prms.vmax_ij[II[j],JJ[j]] .* min.(N ./ (N .+ prms.Kp_ij[II[j],JJ[j]]), C ./ (C .+ prms.Kp_ij[II[j],JJ[j]]))
+        uptake = P[JJ[j],:] .* mu
+        dPdt[JJ[j],:] += uptake
+
+        dNdt -= uptake * (1/prms.CNr)
+        dCdt -= uptake * (1-(1/prms.CNr))
+
     end
 
-    return dPdt, dNdt, dDICdt
+    return dPdt, dNdt, dCdt
 
 end 
 
 
-function bacteria_uptake(prms, B, D, dDdt, dBdt, dNdt, dDICdt, t=0)
-    #NOTE for every 1 N excreted, 6 C is respired
+function bacteria_uptake(prms, B, Dn, Dc, dDndt, dDcdt, dBdt, dNdt, dCdt, t=0)
+    #NOTE for every 1 N excreted, CNr * C is respired
+    # uptake rate controlled by limiting substrate (DOC or DON)
 
     II, JJ = get_nonzero_axes(prms.CM)
 
     for j = axes(II, 1)
-        uptake = prms.umax_ij[II[j],JJ[j]] .* D[II[j],:] ./ (D[II[j],:] .+ prms.Km_ij[II[j],JJ[j]]) .* B[JJ[j],:]
-        dDdt[II[j],:] += -uptake
-        dBdt[JJ[j],:] += uptake .* prms.y_ij[II[j],JJ[j]]
-        dDICdt += uptake * (1 - prms.y_ij[II[j],JJ[j]]) * prms.CNr
-        dNdt += uptake * (1 - prms.y_ij[II[j],JJ[j]])
+        mu = prms.umax_ij[II[j],JJ[j]] .* min.( Dn[II[j],:]./(Dn[II[j],:].+prms.Km_ij[II[j],JJ[j]]), Dc[II[j],:]./(Dc[II[j],:].+prms.Km_ij[II[j],JJ[j]]) )
+        uptake = B[JJ[j],:] .* mu
+        
+        # DON and DOC uptake
+        dDndt[II[j],:] -= (uptake * (1/prms.CNr))
+        dDcdt[II[j],:] -= (uptake * (1-(1/prms.CNr)))
+
+        # Proportion of uptake for growth (yield)
+        dBdt[JJ[j],:] += (uptake * prms.y_ij[II[j],JJ[j]])  
+        
+        # Proportion of uptake remineralized (1 - yield)
+        dNdt += (uptake * (1-prms.y_ij[II[j],JJ[j]])) * (1/prms.CNr)
+        dCdt += (uptake * (1-prms.y_ij[II[j],JJ[j]])) * (1-(1/prms.CNr))
     end
 
-    return dDdt, dBdt, dNdt, dDICdt
+    return dDndt, dDcdt, dBdt, dNdt, dCdt
 
 end
 
 
-function grazing(prms, P, B, Z, dZdt, dNdt, dDICdt, dPdt, dBdt, t=0)
-    # #NOTE for every 1 N excreted or lost to sloppy feeding, 6 C is respired
+function grazing(prms, P, B, Z, dZdt, dNdt, dCdt, dPdt, dBdt, t=0)
 
     GrM = copy(prms.GrM)
     for k = 1:prms.nz
         if sum(GrM[k, 1:prms.np]) > 0 
-            dZdt, dNdt, dDICdt, dPdt = phyto_grazing(prms, GrM, P, Z, dZdt, dNdt, dDICdt, dPdt, k, t)
+            dZdt, dNdt, dCdt, dPdt = phyto_grazing(prms, GrM, P, Z, dZdt, dNdt, dCdt, dPdt, k, t)
         end
         if sum(GrM[k, prms.np+1:end]) > 0 
-            dZdt, dNdt, dDICdt, dBdt = bacteria_grazing(prms, GrM, B, Z, dZdt, dNdt, dDICdt, dBdt, k, t)
+            dZdt, dNdt, dCdt, dBdt = bacteria_grazing(prms, GrM, B, Z, dZdt, dNdt, dCdt, dBdt, k, t)
         end
     end
 
-    return dZdt, dNdt, dDICdt, dPdt, dBdt
+    return dZdt, dNdt, dCdt, dPdt, dBdt
 
 end
 
-        function phyto_grazing(prms, GrM, P, Z, dZdt, dNdt, dDICdt, dPdt, k, t)
+        function phyto_grazing(prms, GrM, P, Z, dZdt, dNdt, dCdt, dPdt, k, t)
 
-            prey = sum(GrM[k,1:prms.np] .*P)
-            gp = prms.g_max[k] * prey / (prey + prms.K_g[k])
-            dZdt[k,:] += prms.γ[k] * gp .* Z[k,:]
-            dNdt += (1 - prms.γ[k]) .* gp .* Z[k,:]
-            dDICdt += ((1 - prms.γ[k]) .* gp .* Z[k,:]) .* prms.CNr
-            dPdt += -gp .* Z[k,:] .* GrM[k,1:prms.np] .* P ./ prey 
+            prey = sum(GrM[k,1:prms.np] .* P)
+            gz = prms.g_max[k] * prey / (prey + prms.K_g[k])
+            dZdt[k,:] += prms.γ[k] * gz .* Z[k,:]
+            dPdt -= (gz .* Z[k,:] .* GrM[k,1:prms.np] .* P ./ prey)
+
+            dNdt += ((1-prms.γ[k]) .* gz .* Z[k,:]) * (1/prms.CNr)
+            dCdt += ((1-prms.γ[k]) .* gz .* Z[k,:]) * (1-(1/prms.CNr))
             
-            return dZdt, dNdt, dDICdt, dPdt
+            return dZdt, dNdt, dCdt, dPdt
 
         end
 
-        function bacteria_grazing(prms, GrM, B, Z, dZdt, dNdt, dDICdt, dBdt, k, t)
+        function bacteria_grazing(prms, GrM, B, Z, dZdt, dNdt, dCdt, dBdt, k, t)
 
             prey = sum(GrM[k,prms.np+1:end] .* B)
-            gb = prms.g_max[k] * prey / (prey + prms.K_g[k])
-            dZdt[k,:] += prms.γ[k] .* gb .* Z[k,:]
-            dNdt += (1 - prms.γ[k]) .* gb .* Z[k,:]
-            dDICdt += ((1 - prms.γ[k]) .* gb .* Z[k,:]) .* CNr
-            dBdt +=  -gb .* Z[k,:] .* GrM[k,prms.np+1:end] .* B ./ prey
+            gz = prms.g_max[k] * prey / (prey + prms.K_g[k])
+            dZdt[k,:] += prms.γ[k] .* gz .* Z[k,:]
+            dBdt -=  (gz .* Z[k,:] .* GrM[k,prms.np+1:end] .* B ./ prey)
 
-            return dZdt, dNdt, dDICdt, dBdt
+            dNdt += ((1 - prms.γ[k]) .* gz .* Z[k,:]) * (1/prms.CNr)
+            dCdt += ((1 - prms.γ[k]) .* gz .* Z[k,:]) * (1-(1/prms.CNr))
+
+            return dZdt, dNdt, dCdt, dBdt
 
         end
 
 
-function viral_lysis(prms, B, V, dVdt, dBdt, d_gain_vly, t)
+function viral_lysis(prms, B, V, dVdt, dBdt, don_gain_vly, doc_gain_vly, t)
 
     II, JJ = get_nonzero_axes(prms.VM)
 
     for j = axes(II, 1)
         lysis_Bi = prms.vly .* VM[II[j], JJ[j]] .* B[JJ[j],:] .* V[II[j],:]
-        v_growth = lysis_Bi .* 0.3
-        d_gain_vly += lysis_Bi * 0.7
-        dBdt[JJ[j],:] += -lysis_Bi
-        dVdt[II[j],:] += v_growth
+        dVdt[II[j],:] += lysis_Bi .* 0.3
+        dBdt[JJ[j],:] -= lysis_Bi
+
+        don_gain_vly += (lysis_Bi * 0.7) * (1/prms.CNr)
+        doc_gain_vly += (lysis_Bi * 0.7) * (1-(1/prms.CNr))
     end
     # NOTE as a first approximation, 30% of the lysed B goes into V growth, and 70% is returned to D 
     # leaving out burst size for now as it was just killing all B fast
@@ -256,23 +273,24 @@ function viral_lysis(prms, B, V, dVdt, dBdt, d_gain_vly, t)
     # dVdt += [sum(v_growth)]
     # dBdt += -lysis
 
-    return dVdt, dBdt, d_gain_vly
+    return dVdt, dBdt, don_gain_vly, doc_gain_vly
 
 end
 
 
-function phyto_mortality(prms, P, dPdt, d_gain_mort=0, t=0)
+function phyto_mortality(prms, P, dPdt, don_gain_mort, doc_gain_mort, t=0)
 
     pmort = (prms.m_lp .+ prms.m_qp .* P) .* P
-    dPdt += -pmort
-    d_gain_mort .+= sum(pmort)
+    dPdt -= pmort
+    don_gain_mort .+= sum(pmort) * (1/prms.CNr)
+    doc_gain_mort .+= sum(pmort) * (1-(1/prms.CNr))
 
-    return dPdt, d_gain_mort
+    return dPdt, don_gain_mort, doc_gain_mort
 
 end
 
 
-function bacterial_mortality(prms, B, dBdt, d_gain_mort, lysis, t=0)
+function bacterial_mortality(prms, B, dBdt, don_gain_mort, doc_gain_mort, lysis, t=0)
 
     if lysis == 1
         bmort = prms.m_lb .* B
@@ -280,45 +298,53 @@ function bacterial_mortality(prms, B, dBdt, d_gain_mort, lysis, t=0)
         bmort = (prms.m_lb .+ prms.m_qb .* B) .* B
     end
 
-    dBdt += -bmort
-    d_gain_mort .+= sum(bmort)
+    dBdt -= bmort
+    don_gain_mort .+= sum(bmort) * (1/prms.CNr)
+    doc_gain_mort .+= sum(bmort) * (1-(1/prms.CNr))
 
-    return dBdt, d_gain_mort
+    return dBdt, don_gain_mort, doc_gain_mort
 
 end
 
 
-function zoo_mortality(prms, Z, dZdt, d_gain_mort, t=0)
+function zoo_mortality(prms, Z, dZdt, don_gain_mort, doc_gain_mort, t=0)
 
     zmort = (prms.m_lz .+ prms.m_qz .* Z) .* Z
-    dZdt += -zmort
-    d_gain_mort .+= sum(zmort)
+    dZdt -= zmort
+    don_gain_mort .+= sum(zmort) * (1/prms.CNr)
+    doc_gain_mort .+= sum(zmort) * (1-(1/prms.CNr))
 
-    return dZdt, d_gain_mort
+    return dZdt, don_gain_mort, doc_gain_mort
 
 end
 
 
-function viral_decay(prms, V, dVdt, d_gain_vde, t=0)
+function viral_decay(prms, V, dVdt, don_gain_vde, doc_gain_vde, t=0)
 
     decay = prms.vde .* V
-    dVdt += -decay
-    d_gain_vde .+= sum(decay)
+    dVdt -= decay
+    don_gain_vde .+= sum(decay) * (1/prms.CNr)
+    doc_gain_vde .+= sum(decay) * (1-(1/prms.CNr))
 
-    return dVdt, d_gain_vde
-
+    return dVdt, don_gain_vde, doc_gain_vde
 end
 
 
-function total_change_in_d(prms, D, dDdt, d_gain_mort, d_gain_vly, d_gain_vde, t=0)
+function total_change_in_d(prms, Dn, Dc, dDndt, dDcdt, don_gain_mort, doc_gain_mort, don_gain_vly, doc_gain_vly, don_gain_vde, doc_gain_vde, t=0)
 
-    dDdt += d_gain_mort .* prms.om_dist_mort
-    dDdt += d_gain_vly .* prms.om_dist_lys
-    dDdt += d_gain_vde .* prms.om_dist_vde
+    # dDndt += don_gain_mort .* prms.om_dist_mort
+    # dDcdt += doc_gain_mort .* prms.om_dist_mort
 
-    dDdt -= D .* prms.rsink
+    # dDndt += don_gain_vly .* prms.om_dist_lys
+    # dDcdt += doc_gain_vly .* prms.om_dist_lys
 
-    return dDdt
+    # dDndt += don_gain_vde .* prms.om_dist_vde
+    # dDcdt += doc_gain_vde .* prms.om_dist_vde
+
+    # dDndt -= Dn .* prms.rsink
+    # dDcdt -= Dc .* prms.rsink 
+
+    return dDndt, dDcdt
 
 end
 

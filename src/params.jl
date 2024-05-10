@@ -11,7 +11,8 @@ struct Prms
     np::Int64                      # number of phytoplankton
     nz::Int64                      # number of zooplankton
     nb::Int64                      # number of bacteria
-    nd::Int64                      # number of organic matter pools
+    ndn::Int64                     # number of DOM pools
+    ndc::Int64                     # number of DOC pools
     nv::Int64                      # number of viral pools 
     CNr::Int64                     # carbon to nitrogen ratio
     nIC::Array{Float64,1}          # initial condition for n at time 0
@@ -19,7 +20,8 @@ struct Prms
     pIC::Array{Float64,1}          # initial condition for p at time 0
     zIC::Array{Float64,1}          # initial condition for z at time 0
     bIC::Array{Float64,1}          # initial condition for b at time 0
-    dIC::Array{Float64,1}          # initial condition for d at time 0
+    dnIC::Array{Float64,1}         # initial condition for dom at time 0
+    dcIC::Array{Float64,1}         # initial condition for doc at time 0
     vIC::Array{Float64,1}          # initial condition for v at time 0
     vmax_i::Array{Float64,1}       # max uptake rate overall for p_i
     vmax_ij::Array{Float64,2}      # max uptake rate of phyto j on n

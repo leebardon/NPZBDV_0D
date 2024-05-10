@@ -16,10 +16,11 @@
         np = 6
         nz = 2
         nb = 2
-        nd = 5
+        ndn = 5
+        ndc = 5
         nv = 2  
 
-        fsaven = set_savefiles(now(), years, nn, nc, np, nz, nb, nd, nv, lysis)
+        fsaven = set_savefiles(now(), years, nn, nc, np, nz, nb, ndn, ndc, nv, lysis)
         logger = set_logger(now())
 
     # -----------------------------------------------------------------------------------------------------------#
@@ -40,13 +41,13 @@
     # -----------------------------------------------------------------------------------------------------------#
     #                                    HETEROTROPHIC BACTERIA PARAMS
     #------------------------------------------------------------------------------------------------------------#
-        CM = [0 0 
-              0 0
+        CM = [1 1 
               1 1
-              0 0
-              0 0] 
+              1 1
+              1 1
+              1 1] 
         
-        y_i = ones(nd)*0.3
+        y_i = ones(ndn)*0.3
         y_ij = broadcast(*, y_i, CM) 
     
         Fg_b = [1.0, 1.0]
@@ -108,7 +109,8 @@
         nIC = ones(nn)*5.0
         cIC = ones(nc)*30.0
         pIC = ones(np)*0.1
-        dIC = ones(nd)*0.1
+        dnIC = ones(ndn)*0.1
+        dcIC = ones(ndc)*0.1
         bIC = ones(nb)*0.01
         
 
@@ -142,7 +144,7 @@
             vIC = ones(nv)*0.1
             # how much nitrogen per virus? get a virus quota per nitrogen i.e. mmol N / virus then convert back to mmol/day
         else 
-            VM = fill(0, (nd, nb))
+            VM = fill(0, (ndn, nb))
             vly = 0.0
             vbs = 0                
             vde = 0.0   
@@ -154,7 +156,7 @@
     #------------------------------------------------------------------------------------------------------------#
     params = Prms(
                 years, days, nrec, dt, nt, 
-                nn, nc, np, nz, nb, nd, nv, CNr, nIC, cIC, pIC, zIC, bIC, dIC, vIC,
+                nn, nc, np, nz, nb, ndn, ndc, nv, CNr, nIC, cIC, pIC, zIC, bIC, dnIC, dcIC, vIC,
                 vmax_i, vmax_ij, Kp_i, Kp_ij, m_lp, m_qp, CMp, Fg_p,
                 umax_i, umax_ij, Km_i, Km_ij, y_ij, m_lb, m_qb, CM, Fg_b,
                 g_max, K_g, γ, m_lz, m_qz, GrM, vly, vbs, vde, VM, 

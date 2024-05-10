@@ -22,14 +22,14 @@ function message(v::String, nd::Int64=0, nb::Int64=0, np::Int64=0, nz::Int64=0, 
 end
 
 
-function set_savefiles(launch_time, years, nn, nc, np, nz, nb, nd, nv, lysis=0)
+function set_savefiles(launch_time, years, nn, nc, np, nz, nb, ndn, ndc, nv, lysis=0)
 
     fsave = "results/outfiles/"
 
     if lysis != 1
-        fsaven = string(fsave, Dates.format(launch_time, "yymmdd_HH:MM"), "_$(years)y_$(nn)N$(nc)C$(np)P$(nz)Z$(nb)B$(nd)D$(nv)V.nc")
+        fsaven = string(fsave, Dates.format(launch_time, "yymmdd_HH:MM"), "_$(years)y_$(nn)N$(nc)C$(np)P$(nz)Z$(nb)B$(ndn+ndc)D$(nv)V.nc")
     else
-        fsaven = string(fsave, Dates.format(launch_time, "yymmdd_HH:MM"), "_$(years)y_$(nn)N$(nc)C$(np)P$(nz)Z$(nb)B$(nd)D$(nv)V_L.nc")
+        fsaven = string(fsave, Dates.format(launch_time, "yymmdd_HH:MM"), "_$(years)y_$(nn)N$(nc)C$(np)P$(nz)Z$(nb)B$(ndn+ndc)D$(nv)V_L.nc")
     end
 
     return fsaven
@@ -71,13 +71,15 @@ function log_params(prms, lysis)
     np:             $(prms.np)                     
     nz:             $(prms.nz)        
     nb:             $(prms.nb)         
-    nd:             $(prms.nd) 
+    ndn:            $(prms.ndn) 
+    ndc:            $(prms.ndc) 
     nv:             $(prms.nv)   
     nIC:            $(prms.nIC[1])                        
     pIC:            $(prms.pIC[1])
     zIC:            $(prms.zIC[1])
     bIC:            $(prms.bIC[1])
-    dIC:            $(prms.dIC[1])
+    dnIC:           $(prms.dnIC[1])
+    dcIC:           $(prms.dcIC[1])
     vIC:            $(prms.vIC[1])
     vmax_i:         $(prms.vmax_i)
     vmax_ij:        $(prms.vmax_ij)
@@ -115,7 +117,7 @@ end
 
 function print_info(prms)
 
-    @printf("\n np = %5.0f \n nb = %5.0f \n nz = %5.0f \n nn = %5.0f \n nd = %5.0f \n nv = %5.0f \n days = %5.0f \n\n", prms.np, prms.nb, prms.nz, prms.nn, prms.nd, prms.nv, prms.days)
+    @printf("\n np = %5.0f \n nb = %5.0f \n nz = %5.0f \n nn = %5.0f \n ndn = %5.0f \n ndc = %5.0f \n nv = %5.0f \n days = %5.0f \n\n", prms.np, prms.nb, prms.nz, prms.nn, prms.ndn, prms.ndc, prms.nv, prms.days)
     println("File will be saved as: ", prms.fsaven)
     println("nt = ", prms.nt)
 
@@ -288,7 +290,7 @@ function print_info(start_time, prms, nt)
 end
 
 
-function update_tracking_arrs(track_n, track_c, track_p, track_z, track_b, track_d, track_v, track_time, ntemp, ctemp, ptemp, ztemp, btemp, dtemp, vtemp, t, trec, prms)
+function update_tracking_arrs(track_n, track_c, track_p, track_z, track_b, track_dn, track_dc, track_v, track_time, ntemp, ctemp, ptemp, ztemp, btemp, dntemp, dctemp, vtemp, t, trec, prms)
 
     j = Int(t÷trec + 1)
     t_id = t.*prms.dt
@@ -297,38 +299,34 @@ function update_tracking_arrs(track_n, track_c, track_p, track_z, track_b, track
     track_z[:,j] .= ztemp 
     track_n[:,j] .= ntemp 
     track_c[:,j] .= ctemp 
-    track_d[:,j] .= dtemp
+    track_dn[:,j] .= dntemp
+    track_dc[:,j] .= dctemp
     track_v[:,j] .= vtemp
     track_time[j] = t_id 
 
     @printf("Day %7.1f out of %5.0f = %4.0f%% done at %s \n", t_id, prms.days, t_id/prms.days*100, now())
 
-    return track_n, track_c, track_p, track_z, track_b, track_d, track_v, track_time
+    return track_n, track_c, track_p, track_z, track_b, track_dn, track_dc, track_v, track_time
 
 end
 
 
-function savetoNC(fsaven, p, b, z, n, c, d, v, timet, tst, tfn, prms, pulse)
+function savetoNC(fsaven, p, b, z, n, c, dn, dc, v, timet, tst, tfn, prms, pulse)
 
     outdir = "/home/lee/Dropbox/Development/NPZBDV_0D/"
     path = joinpath(outdir, fsaven) 
     println("Saving to: ", path)
 
-    # if pulse == 0
-    #     season = "winter"
-    # else
-    #     season = "summer"
-    # end
-
     f = NCDataset(path, "c") #c for create
 
-    # define the dim of p, b, z, n, d
+    # define the dim of p, b, z, n, dn, dc
     defDim(f,"np", prms.np)
     defDim(f,"nb", prms.nb)
     defDim(f,"nz", prms.nz)
     defDim(f,"nn", prms.nn)
     defDim(f,"nc", prms.nc)
-    defDim(f,"nd", prms.nd)
+    defDim(f,"ndn", prms.ndn)
+    defDim(f,"ndc", prms.ndc)
     defDim(f,"nv", prms.nv)
 
     # define the dim of the time length
@@ -365,9 +363,13 @@ function savetoNC(fsaven, p, b, z, n, c, d, v, timet, tst, tfn, prms, pulse)
      w[:,:] = c
      w.attrib["units"] = "mmol/m3 C OM"
  
-     w = defVar(f,"d",Float64,("nd","nrec"))
-     w[:,:] = d
+     w = defVar(f,"dn",Float64,("ndn","nrec"))
+     w[:,:] = dn
      w.attrib["units"] = "mmol/m3 N OM"
+
+     w = defVar(f,"dc",Float64,("ndc","nrec"))
+     w[:,:] = dc
+     w.attrib["units"] = "mmol/m3 C OM"
 
      w = defVar(f,"v",Float64,("nv","nrec"))
      w[:,:] = v
@@ -405,7 +407,7 @@ function savetoNC(fsaven, p, b, z, n, c, d, v, timet, tst, tfn, prms, pulse)
     #  w[:] = prms.K_n
     #  w.attrib["units"] = "m3/mmol; half-sat rate of p"
  
-     w = defVar(f,"CM",Float64,("nd","nb"))
+     w = defVar(f,"CM",Float64,("ndn","nb"))
      w[:,:] = prms.CM
      w.attrib["units"] = "Consumption Matrix"
  
@@ -461,17 +463,17 @@ function savetoNC(fsaven, p, b, z, n, c, d, v, timet, tst, tfn, prms, pulse)
  
  end
 
-function define_dims(ds, prms, nrec1)
+# function define_dims(ds, prms, nrec1)
 
-    vars = Dict("nb" => prms.nb, "nd" => prms.nd, "nrec" => nrec1)
+#     vars = Dict("nb" => prms.nb, "nd" => prms.nd, "nrec" => nrec1)
 
-    for (k, v) in x
-        defDim(ds, k, v)
-    end
+#     for (k, v) in x
+#         defDim(ds, k, v)
+#     end
 
-    return ds
+#     return ds
 
-end
+# end
 
 # BELOW WAS INSERTED INTO FUNCTIONS TO TRACE NAN AND INF WEIRDNESS - CAUSED BY USING UNDEF TO 
 # INITIALISE EMPTY ARRS TO BE LATER USED DURING INTEGRATION
