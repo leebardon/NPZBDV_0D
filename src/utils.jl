@@ -22,14 +22,14 @@ function message(v::String, nd::Int64=0, nb::Int64=0, np::Int64=0, nz::Int64=0, 
 end
 
 
-function set_savefiles(launch_time, years, nn, np, nz, nb, nd, nv, lysis=0)
+function set_savefiles(launch_time, years, nn, nc, np, nz, nb, nd, nv, lysis=0)
 
     fsave = "results/outfiles/"
 
     if lysis != 1
-        fsaven = string(fsave, Dates.format(launch_time, "yymmdd_HH:MM"), "_$(years)y_$(nn)N$(np)P$(nz)Z$(nb)B$(nd)D$(nv)V.nc")
+        fsaven = string(fsave, Dates.format(launch_time, "yymmdd_HH:MM"), "_$(years)y_$(nn)N$(nc)C$(np)P$(nz)Z$(nb)B$(nd)D$(nv)V.nc")
     else
-        fsaven = string(fsave, Dates.format(launch_time, "yymmdd_HH:MM"), "_$(years)y_$(nn)N$(np)P$(nz)Z$(nb)B$(nd)D$(nv)V_L.nc")
+        fsaven = string(fsave, Dates.format(launch_time, "yymmdd_HH:MM"), "_$(years)y_$(nn)N$(nc)C$(np)P$(nz)Z$(nb)B$(nd)D$(nv)V_L.nc")
     end
 
     return fsaven

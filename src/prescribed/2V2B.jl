@@ -19,7 +19,7 @@
         nd = 5
         nv = 2  
 
-        fsaven = set_savefiles(now(), years, nn, np, nz, nb, nd, nv, lysis)
+        fsaven = set_savefiles(now(), years, nn, nc, np, nz, nb, nd, nv, lysis)
         logger = set_logger(now())
 
     # -----------------------------------------------------------------------------------------------------------#
@@ -119,6 +119,7 @@
         # rsink = 1.0
         rsource = 0.0
         rsink = 0.0
+        CNr = 6
 
         # distribution of OM from mortality and lysis to detritus pools
         # viral decay amost entirely contributes to labile pool, lysis weighted to labile but includes both (walls & innards)
@@ -153,7 +154,7 @@
     #------------------------------------------------------------------------------------------------------------#
     params = Prms(
                 years, days, nrec, dt, nt, 
-                nn, nc, np, nz, nb, nd, nv, nIC, cIC, pIC, zIC, bIC, dIC, vIC,
+                nn, nc, np, nz, nb, nd, nv, CNr, nIC, cIC, pIC, zIC, bIC, dIC, vIC,
                 vmax_i, vmax_ij, Kp_i, Kp_ij, m_lp, m_qp, CMp, Fg_p,
                 umax_i, umax_ij, Km_i, Km_ij, y_ij, m_lb, m_qb, CM, Fg_b,
                 g_max, K_g, γ, m_lz, m_qz, GrM, vly, vbs, vde, VM, 

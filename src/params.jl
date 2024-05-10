@@ -13,6 +13,7 @@ struct Prms
     nb::Int64                      # number of bacteria
     nd::Int64                      # number of organic matter pools
     nv::Int64                      # number of viral pools 
+    CNr::Int64                     # carbon to nitrogen ratio
     nIC::Array{Float64,1}          # initial condition for n at time 0
     cIC::Array{Float64,1}          # initial condition for c at time 0
     pIC::Array{Float64,1}          # initial condition for p at time 0

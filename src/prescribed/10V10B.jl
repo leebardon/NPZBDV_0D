@@ -12,13 +12,14 @@ include("../plot.jl")
 #   CORE PARAMS 
 #------------------------------------------------------------------------------------------------------------#
     nn = 1
+    nc = 1
     np = 6
     nz = 2
     nb = 10
     nd = 5
     nv = 10  
 
-    fsaven = set_savefiles(now(), years, nn, np, nz, nb, nd, nv, lysis)
+    fsaven = set_savefiles(now(), years, nn, nc, np, nz, nb, nd, nv, lysis)
     logger = set_logger(now())
 
 # -----------------------------------------------------------------------------------------------------------#
@@ -111,6 +112,7 @@ include("../plot.jl")
 #   INITIAL CONDITIONS
 #------------------------------------------------------------------------------------------------------------#
     nIC = ones(nn)*5.0
+    cIC = ones(nc)*30.0
     pIC = ones(np)*0.1
     dIC = ones(nd)*0.1
     bIC = ones(nb)*0.01
@@ -163,7 +165,7 @@ include("../plot.jl")
 #------------------------------------------------------------------------------------------------------------#
     params = Prms(
                 years, days, nrec, dt, nt, 
-                nn, np, nz, nb, nd, nv, nIC, pIC, zIC, bIC, dIC, vIC,
+                nn, nc, np, nz, nb, nd, nv, nIC, cIC, pIC, zIC, bIC, dIC, vIC,
                 vmax_i, vmax_ij, Kp_i, Kp_ij, m_lp, m_qp, CMp, Fg_p,
                 umax_i, umax_ij, Km_i, Km_ij, y_ij, m_lb, m_qb, CM, Fg_b,
                 g_max, K_g, γ, m_lz, m_qz, GrM, vly, vbs, vde, VM, 

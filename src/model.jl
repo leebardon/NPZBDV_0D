@@ -125,7 +125,7 @@ function model_functions(N, DIC, P, Z, B, D, V, prms, t, lysis)
     dPdt, dNdt, dDICdt = phyto_uptake(prms, N, DIC, P, dNdt, dDICdt, dPdt, t)
 
     # bacteria uptake
-    dDdt, dBdt, dDICdt, dNdt = bacteria_uptake(prms, B, D, dDdt, dBdt, dDICdt, dNdt, t)
+    dDdt, dBdt, dNdt, dDICdt = bacteria_uptake(prms, B, D, dDdt, dBdt, dNdt, dDICdt, t)
 
     # zooplank grazing
     dZdt, dNdt, dDICdt, dPdt, dBdt = grazing(prms, P, B, Z, dZdt, dNdt, dDICdt, dPdt, dBdt, t)
@@ -165,7 +165,7 @@ function phyto_uptake(prms, N, DIC, P, dNdt, dDICdt, dPdt, t)
         # uptake rate set by limiting nutrient (C or N)
         uptake = P[JJ[j]] .* prms.vmax_ij[II[j],JJ[j]] .* min.(N ./ (N .+ prms.Kp_ij[II[j],JJ[j]]), DIC ./ (DIC .+ prms.Kp_ij[II[j],JJ[j]]))
         dNdt .+= -uptake[1]
-        dDICdt .+= -uptake[1] .* 6
+        dDICdt .+= -uptake[1] .* prms.CNr
         dPdt[JJ[j]] += uptake[1]
     end
 
@@ -174,7 +174,7 @@ function phyto_uptake(prms, N, DIC, P, dNdt, dDICdt, dPdt, t)
 end 
 
 
-function bacteria_uptake(prms, B, D, dDdt, dBdt, dDICdt, dNdt, t=0)
+function bacteria_uptake(prms, B, D, dDdt, dBdt, dNdt, dDICdt, t=0)
     #NOTE for every 1 N excreted, 6 C is respired
 
     II, JJ = get_nonzero_axes(prms.CM)
@@ -183,11 +183,11 @@ function bacteria_uptake(prms, B, D, dDdt, dBdt, dDICdt, dNdt, t=0)
         uptake = prms.umax_ij[II[j],JJ[j]] .* D[II[j],:] ./ (D[II[j],:] .+ prms.Km_ij[II[j],JJ[j]]) .* B[JJ[j],:]
         dDdt[II[j],:] += -uptake
         dBdt[JJ[j],:] += uptake .* prms.y_ij[II[j],JJ[j]]
-        dDICdt += uptake * (1 - prms.y_ij[II[j],JJ[j]]) * 6
+        dDICdt += uptake * (1 - prms.y_ij[II[j],JJ[j]]) * prms.CNr
         dNdt += uptake * (1 - prms.y_ij[II[j],JJ[j]])
     end
 
-    return dDdt, dBdt, dDICdt, dNdt
+    return dDdt, dBdt, dNdt, dDICdt
 
 end
 
@@ -215,7 +215,7 @@ end
             gp = prms.g_max[k] * prey / (prey + prms.K_g[k])
             dZdt[k,:] += prms.γ[k] * gp .* Z[k,:]
             dNdt += (1 - prms.γ[k]) .* gp .* Z[k,:]
-            dDICdt += ((1 - prms.γ[k]) .* gp .* Z[k,:]) .* 6
+            dDICdt += ((1 - prms.γ[k]) .* gp .* Z[k,:]) .* prms.CNr
             dPdt += -gp .* Z[k,:] .* GrM[k,1:prms.np] .* P ./ prey 
             
             return dZdt, dNdt, dDICdt, dPdt
@@ -228,7 +228,7 @@ end
             gb = prms.g_max[k] * prey / (prey + prms.K_g[k])
             dZdt[k,:] += prms.γ[k] .* gb .* Z[k,:]
             dNdt += (1 - prms.γ[k]) .* gb .* Z[k,:]
-            dDICdt += ((1 - prms.γ[k]) .* gb .* Z[k,:]) .* 6
+            dDICdt += ((1 - prms.γ[k]) .* gb .* Z[k,:]) .* CNr
             dBdt +=  -gb .* Z[k,:] .* GrM[k,prms.np+1:end] .* B ./ prey
 
             return dZdt, dNdt, dDICdt, dBdt

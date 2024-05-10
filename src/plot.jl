@@ -109,12 +109,12 @@ function plot_individual(n, c, p, z, b, d, v, timet)
 
     all_n, all_c, all_p, all_z, all_b, all_d, all_v = sum_subtypes([n, c, p, z, b, d, v])
 
-    plt = plot(timet[:], [all_p[:], all_b[:], all_z[:], all_d[:], all_v[:], all_n[:], all_c[:]]; 
+    plt = plot(timet[:], [all_p[:], all_b[:], all_z[:], all_v[:], all_d[:], all_n[:], all_c[:]]; 
     layout = 7, 
     linewidth = 3.5, 
     alpha=0.5,
     legend = false, 
-    title = ["Total P" "Total B" "Total Z" "Total DOM" "Total V" "Total N" "Total DIC"]
+    title = ["Total P" "Total B" "Total Z" "Total V" "Total DOM" "Total N" "Total DIC"]
     )
 
     return plt
