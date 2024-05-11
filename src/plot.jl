@@ -13,16 +13,17 @@ function plot_results(outfile, lysis, graze, carbon, pulse=0)
 
     n, c, p, z, b, dn, dc, v, timet = get_plot_variables(ds, ["n", "c", "p", "z", "b", "dn", "dc", "v", "timet"])
 
-    f1 = plot_total(n, c, p, z, b, dn, dc, v, timet)
-    f2 = plot_all_bio(p, z, b, v, timet)
-    f3 = plot_individual(n, c, p, z, b, dn, dc, v, timet)
+    f1 = plot_substrates(n, c, p, z, b, dn, dc, v, timet)
+    f2 = plot_heterotrophs(p, z, b, v, timet)
+    f3 = plot_bio(p, z, b, v, timet)
+    f4 = plot_individual(n, c, p, z, b, dn, dc, v, timet)
 
     l = @layout [
-        a{0.5w} b{0.5w} 
-            c{0.6h}  
+        a{0.33w} b{0.33w} c{0.33w} 
+                 d{0.6h}  
     ]
 
-    f = plot(f1, f2, f3, 
+    f = plot(f1, f2, f3, f4,
     fg_legend = :transparent,
     layout = l,
     )
@@ -39,28 +40,28 @@ function plot_results(outfile, lysis, graze, carbon, pulse=0)
 
 end
 
-function plot_total(n, c, p, z, b, dn, dc, v, timet)
+function plot_substrates(n, c, p, z, b, dn, dc, v, timet)
 
     all_n, all_c, all_p, all_z, all_b, all_dn, all_dc, all_v = sum_subtypes([n, c, p, z, b, dn, dc, v])
 
     alp=0.8
 
-    fig1 = plot(timet[:], [all_p[:], all_b[:]], lw=4, lc=[:seagreen :darkblue], label=["P" "B"], grid=false, alpha=alp)
-    plot!(timet[:], [all_n[:], all_dn[:]], lw=3, linecolor=[:firebrick1 :darkred], ls=:dot, label=["DIN" "DON"])
+    # fig1 = plot(timet[:], [all_p[:], all_b[:]], lw=4, lc=[:seagreen :darkblue], label=["P" "B"], grid=false, alpha=alp)
+    # if sum(all_z) > 0
+    #     plot!(timet[:], all_z[:], lw=4, linecolor=:black, label="Z", alpha=alp)
+    # end
+    
+    fig1 = plot(timet[:], [all_n[:], all_dn[:]], lw=3, linecolor=[:firebrick1 :darkred], ls=:dot, label=["DIN" "DON"])
 
     if sum(all_c) > 0
         plot!(timet[:], [all_c[:], all_dc[:]], lw=3, linecolor=[:grey82 :grey30], ls=:dot, label=["DIC" "DOC"])
     end
 
-    if sum(all_z) > 0
-        plot!(timet[:], all_z[:], lw=4, linecolor=:black, label="Z", alpha=alp)
-    end
+    # if sum(all_v) > 0
+    #     plot!(timet[:], all_v[:], lw=4, linecolor=:purple, label="V", alpha=alp)
+    # end
 
-    if sum(all_v) > 0
-        plot!(timet[:], all_v[:], lw=4, linecolor=:purple, label="V", alpha=alp)
-    end
-
-    title!("State variables over time")
+    title!("Substrates over time")
     xlabel!("Time (days)")
     ylabel!(L" mmol ~N/m^3")
 
@@ -68,43 +69,84 @@ function plot_total(n, c, p, z, b, dn, dc, v, timet)
 
 end
 
-function plot_all_bio(p, z, b, v, timet)
+function plot_heterotrophs(p, z, b, v, timet)
 
     np, nz, nb, nv = get_size([p,z,b,v])
-    alp=0.5
+    alp=0.7
     l=4
 
-    fig2 = plot(timet[:], p[1, :], lw=l, linecolor="seagreen", grid=false, label="P", alpha=alp)
-    if np > 1
-        for i in 2:np
-            plot!(timet[:], p[i, :], lw=l, color="seagreen", grid=false, label=" ", alpha=alp)
+    # fig2 = plot(timet[:], p[1, :], lw=l, linecolor="seagreen", grid=false, label=false, alpha=alp)
+    # if np > 1
+    #     for i in 2:np
+    #         plot!(timet[:], p[i, :], lw=l, color="seagreen", grid=false, label=false, alpha=alp)
+    #     end
+    # end 
+
+    fig2 = plot(timet[:], b[1, :], lw=l, linecolor="seagreen", grid=false, label=false, alpha=alp)
+    if nb > 1
+        for i in 2:nb
+            plot!(timet[:], b[i, :], lw=l, palette=:batlow10, grid=false, label=false, alpha=alp)
         end
     end 
 
-    for j in 1:nb
-        j == 1 ? lab="B" : lab=" "
-        plot!(timet[:], b[j, :], lw=l, color="darkblue", grid=false, label=lab, alpha=alp)
-    end
+    # for j in 1:nb
+    #     j == 1 ? lab="B" : lab=" "
+    #     plot!(timet[:], b[j, :], lw=l, color="darkblue", grid=false, label=false, alpha=alp)
+    # end
+
+    # if nz > 0
+    #     for k in 1:nz
+    #         k == 1 ? lab="Z" : lab=" "
+    #         plot!(timet[:], z[k, :], lw=l, color="black", grid=false, label=false, alpha=alp)
+    #     end
+    # end
+
+    # if nv > 0
+    #     for x in 1:nv
+    #         x == 1 ? lab="V" : lab=" "
+    #         plot!(timet[:], v[x, :], lw=l, color="purple", grid=false, label=false, alpha=alp)
+    #     end
+    # end
+
+    title!("B dynamics over time")
+    # xlabel!("Time (days)")
+    # ylabel!(L" mmol ~N/m^3")
+
+    return fig2
+
+end
+
+function plot_bio(p, z, b, v, timet)
+
+    np, nz, nb, nv = get_size([p,z,b,v])
+    alp=0.7
+    l=4
+
+    fig3 = plot(timet[:], p[1, :], lw=l, linecolor="seagreen", grid=false, label=false, alpha=alp)
+    if np > 1
+        for i in 2:np
+            plot!(timet[:], p[i, :], lw=l, color="seagreen", grid=false, label=false, alpha=alp)
+        end
+    end 
 
     if nz > 0
         for k in 1:nz
             k == 1 ? lab="Z" : lab=" "
-            plot!(timet[:], z[k, :], lw=l, color="black", grid=false, label=lab, alpha=alp)
+            plot!(timet[:], z[k, :], lw=l, color="black", grid=false, label=false, alpha=alp)
         end
     end
 
     if nv > 0
         for x in 1:nv
             x == 1 ? lab="V" : lab=" "
-            plot!(timet[:], v[x, :], lw=l, color="purple", grid=false, label=lab, alpha=alp)
+            plot!(timet[:], v[x, :], lw=l, color="purple", grid=false, label=false, alpha=alp)
         end
     end
 
-    title!("Community dynamics over time")
-    xlabel!("Time (days)")
-    ylabel!(L" mmol ~N/m^3")
+    title!("PZV dynamics over time")
+    # xlabel!("Time (days)")
 
-    return fig2
+    return fig3
 
 end
 

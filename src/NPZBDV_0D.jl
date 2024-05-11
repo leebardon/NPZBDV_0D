@@ -28,7 +28,7 @@ module NPZBDV_0D
         carbon = request(message("CB1"), RadioMenu(message("CB2")))
         pulse = 0
 
-        rsource = 0.5
+        rsource = 0.8
         rsink = 0.4
         # rsource = 0.0
         # rsink = 0.0

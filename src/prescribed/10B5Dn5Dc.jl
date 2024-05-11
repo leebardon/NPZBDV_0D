@@ -26,7 +26,7 @@
     # -----------------------------------------------------------------------------------------------------------#
     #                                       PHYTOPLANKTON PARAMS 
     #------------------------------------------------------------------------------------------------------------
-        CMp = ones(np)*1.0
+        CMp = [ 1 1 1 1 1 1 ]
 
         Fg_p = [0.1, 0.25, 0.5, 0.68, 0.79, 0.91]      # fraction of proteome optimized to growth
         Fa_p = 1. .- Fg_p                              # fraction optimized to substrate affintiy
@@ -106,7 +106,7 @@
     #   ORGANIC MATTER
     #------------------------------------------------------------------------------------------------------------#
         if carbon == 1
-            cIC = ones(nc)*30.0
+            cIC = ones(nc)*20.0
             dcIC = ones(ndc)*0.1
         else
             cIC = ones(nc)*0.0
@@ -137,7 +137,7 @@
                    0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  1.0  ]
             
             # vly = 4*10e−6         # lysis rate 8*10e-12 L/virus/day (weitz et al 2015) or 2.17 * 10^-11 (2.17*10e−14 m3/virus/day - Xie et al 2022)
-            vly = 2.0
+            vly = 1.5
             vbs = 23                # burst size 
             vde = 0.17              # decay rate (day-1)  0.17
             vIC = ones(nv)*0.1
