@@ -10,10 +10,12 @@ using SparseArrays
 function message(v::String, nd::Int64=0, nb::Int64=0, np::Int64=0, nz::Int64=0, fsaven::String="")
 
     m = Dict(
-        "LY1" => "\nChoose lysis type:",
+        "LY1" => "\nSelect viral lysis type:",
         "LY2" => ["Explicit", "Implicit"],
         "GZ1" => "\nInclude grazers?",
         "GZ2" => ["yes", "no"],
+        "CB1" => "\nInclude carbon pools?",
+        "CB2" => ["yes", "no"],
         "TM" => "\nEnter simulation runtime (years):",
     )
 

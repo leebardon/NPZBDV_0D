@@ -25,7 +25,14 @@ module NPZBDV_0D
     #------------------------------------------------------------------------------------------------------------#
         lysis = request(message("LY1"), RadioMenu(message("LY2")))
         graze = request(message("GZ1"), RadioMenu(message("GZ2")))
+        carbon = request(message("CB1"), RadioMenu(message("CB2")))
         pulse = 0
+
+        rsource = 0.5
+        rsink = 0.4
+        # rsource = 0.0
+        # rsink = 0.0
+        CNr = 6
 
     #------------------------------------------------------------------------------------------------------------#
     #   SELECT SIMULATION TIME  
@@ -51,9 +58,7 @@ module NPZBDV_0D
     #------------------------------------------------------------------------------------------------------------#
         N, C, P, Z, B, Dn, Dc, V, track_time, fsaven = run_NPZBDV(params, lysis)
         log_params(params, lysis)
-
-        outdir = "/home/lee/Dropbox/Development/NPZBDV_0D/"
-        plot_results(outdir, fsaven, lysis, pulse)
+        plot_results(fsaven, lysis, graze, carbon, pulse)
 
 end
 

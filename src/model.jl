@@ -64,8 +64,8 @@ function run_NPZBDV(prms, lysis, pulse=0)
             tot_c = sum(ctemp) + sum(dctemp) + ((sum(ptemp) + sum(btemp) + sum(ztemp) + sum(vtemp)) * (1-(1/prms.CNr)))
             println("Total N: ", tot_n)
             println("Total C: ", tot_c)
-            println("DIN: ", sum(ntemp))
-            println("DIC: ", sum(ctemp))
+            # println("DIN: ", sum(ntemp))
+            # println("DIC: ", sum(ctemp))
 
         end 
 
@@ -332,17 +332,17 @@ end
 
 function total_change_in_d(prms, Dn, Dc, dDndt, dDcdt, don_gain_mort, doc_gain_mort, don_gain_vly, doc_gain_vly, don_gain_vde, doc_gain_vde, t=0)
 
-    # dDndt += don_gain_mort .* prms.om_dist_mort
-    # dDcdt += doc_gain_mort .* prms.om_dist_mort
+    dDndt += don_gain_mort .* prms.om_dist_mort
+    dDcdt += doc_gain_mort .* prms.om_dist_mort
 
-    # dDndt += don_gain_vly .* prms.om_dist_lys
-    # dDcdt += doc_gain_vly .* prms.om_dist_lys
+    dDndt += don_gain_vly .* prms.om_dist_lys
+    dDcdt += doc_gain_vly .* prms.om_dist_lys
 
-    # dDndt += don_gain_vde .* prms.om_dist_vde
-    # dDcdt += doc_gain_vde .* prms.om_dist_vde
+    dDndt += don_gain_vde .* prms.om_dist_vde
+    dDcdt += doc_gain_vde .* prms.om_dist_vde
 
-    # dDndt -= Dn .* prms.rsink
-    # dDcdt -= Dc .* prms.rsink 
+    dDndt -= Dn .* prms.rsink
+    dDcdt -= Dc .* prms.rsink 
 
     return dDndt, dDcdt
 
