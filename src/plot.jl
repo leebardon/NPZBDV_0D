@@ -45,21 +45,13 @@ function plot_substrates(n, c, p, z, b, dn, dc, v, timet)
     all_n, all_c, all_p, all_z, all_b, all_dn, all_dc, all_v = sum_subtypes([n, c, p, z, b, dn, dc, v])
 
     alp=0.8
-
-    # fig1 = plot(timet[:], [all_p[:], all_b[:]], lw=4, lc=[:seagreen :darkblue], label=["P" "B"], grid=false, alpha=alp)
-    # if sum(all_z) > 0
-    #     plot!(timet[:], all_z[:], lw=4, linecolor=:black, label="Z", alpha=alp)
-    # end
+    start_ts=100
     
     fig1 = plot(timet[:], [all_n[:], all_dn[:]], lw=3, linecolor=[:orange :darkred], ls=:dot, label=[" DIN" " DON"])
 
     if sum(all_c) > 0
         plot!(timet[:], [all_c[:], all_dc[:]], lw=3, linecolor=[:grey82 :grey30], ls=:dot, label=[" DIC" " DOC"])
     end
-
-    # if sum(all_v) > 0
-    #     plot!(timet[:], all_v[:], lw=4, linecolor=:purple, label="V", alpha=alp)
-    # end
 
     title!("Substrates over time")
     xlabel!("Time (days)")
@@ -75,13 +67,6 @@ function plot_heterotrophs(p, z, b, v, timet)
     alp=0.7
     l=4
 
-    # fig2 = plot(timet[:], p[1, :], lw=l, linecolor="seagreen", grid=false, label=false, alpha=alp)
-    # if np > 1
-    #     for i in 2:np
-    #         plot!(timet[:], p[i, :], lw=l, color="seagreen", grid=false, label=false, alpha=alp)
-    #     end
-    # end 
-
     fig2 = plot(timet[:], b[1, :], lw=l, linecolor="seagreen", label=false, alpha=alp)
     if nb > 1
         for i in 2:nb
@@ -89,28 +74,7 @@ function plot_heterotrophs(p, z, b, v, timet)
         end
     end 
 
-    # for j in 1:nb
-    #     j == 1 ? lab="B" : lab=" "
-    #     plot!(timet[:], b[j, :], lw=l, color="darkblue", grid=false, label=false, alpha=alp)
-    # end
-
-    # if nz > 0
-    #     for k in 1:nz
-    #         k == 1 ? lab="Z" : lab=" "
-    #         plot!(timet[:], z[k, :], lw=l, color="black", grid=false, label=false, alpha=alp)
-    #     end
-    # end
-
-    # if nv > 0
-    #     for x in 1:nv
-    #         x == 1 ? lab="V" : lab=" "
-    #         plot!(timet[:], v[x, :], lw=l, color="purple", grid=false, label=false, alpha=alp)
-    #     end
-    # end
-
     title!("B dynamics over time")
-    # xlabel!("Time (days)")
-    # ylabel!(L" mmol ~N/m^3")
 
     return fig2
 
@@ -144,7 +108,6 @@ function plot_bio(p, z, b, v, timet)
     end
 
     title!("PZV dynamics over time")
-    # xlabel!("Time (days)")
 
     return fig3
 

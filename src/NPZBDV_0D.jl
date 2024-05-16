@@ -28,11 +28,11 @@ module NPZBDV_0D
         carbon = request(message("CB1"), RadioMenu(message("CB2")))
         pulse = 0
 
-        # rsource = 0.8
-        # rsink = 0.4
-        rsource = 0.0
-        rsink = 0.0
-        CNr = 6
+        # rsource = 0.0
+        # rsink = 0.0
+        rsource = 1.0
+        rsink = 0.5
+        CNr = 5
 
     #------------------------------------------------------------------------------------------------------------#
     #   SELECT SIMULATION TIME  
