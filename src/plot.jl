@@ -51,10 +51,10 @@ function plot_substrates(n, c, p, z, b, dn, dc, v, timet)
     #     plot!(timet[:], all_z[:], lw=4, linecolor=:black, label="Z", alpha=alp)
     # end
     
-    fig1 = plot(timet[:], [all_n[:], all_dn[:]], lw=3, linecolor=[:firebrick1 :darkred], ls=:dot, label=["DIN" "DON"])
+    fig1 = plot(timet[:], [all_n[:], all_dn[:]], lw=3, linecolor=[:orange :darkred], ls=:dot, label=[" DIN" " DON"])
 
     if sum(all_c) > 0
-        plot!(timet[:], [all_c[:], all_dc[:]], lw=3, linecolor=[:grey82 :grey30], ls=:dot, label=["DIC" "DOC"])
+        plot!(timet[:], [all_c[:], all_dc[:]], lw=3, linecolor=[:grey82 :grey30], ls=:dot, label=[" DIC" " DOC"])
     end
 
     # if sum(all_v) > 0
@@ -82,10 +82,10 @@ function plot_heterotrophs(p, z, b, v, timet)
     #     end
     # end 
 
-    fig2 = plot(timet[:], b[1, :], lw=l, linecolor="seagreen", grid=false, label=false, alpha=alp)
+    fig2 = plot(timet[:], b[1, :], lw=l, linecolor="seagreen", label=false, alpha=alp)
     if nb > 1
         for i in 2:nb
-            plot!(timet[:], b[i, :], lw=l, palette=:batlow10, grid=false, label=false, alpha=alp)
+            plot!(timet[:], b[i, :], lw=l, palette=:batlow10, label=false, alpha=alp)
         end
     end 
 
@@ -122,24 +122,24 @@ function plot_bio(p, z, b, v, timet)
     alp=0.7
     l=4
 
-    fig3 = plot(timet[:], p[1, :], lw=l, linecolor="seagreen", grid=false, label=false, alpha=alp)
+    fig3 = plot(timet[:], p[1, :], lw=l, linecolor="seagreen", label=false, alpha=alp)
     if np > 1
         for i in 2:np
-            plot!(timet[:], p[i, :], lw=l, color="seagreen", grid=false, label=false, alpha=alp)
+            plot!(timet[:], p[i, :], lw=l, color="seagreen", label=false, alpha=alp)
         end
     end 
 
     if nz > 0
         for k in 1:nz
             k == 1 ? lab="Z" : lab=" "
-            plot!(timet[:], z[k, :], lw=l, color="black", grid=false, label=false, alpha=alp)
+            plot!(timet[:], z[k, :], lw=l, color="black", label=false, alpha=alp)
         end
     end
 
     if nv > 0
         for x in 1:nv
             x == 1 ? lab="V" : lab=" "
-            plot!(timet[:], v[x, :], lw=l, color="purple", grid=false, label=false, alpha=alp)
+            plot!(timet[:], v[x, :], lw=l, color="purple", label=false, alpha=alp)
         end
     end
 
@@ -180,8 +180,8 @@ function plot_individual(n, c, p, z, b, dn, dc, v, timet)
         fig[7] = plot(timet[:], all_c[:], lw=lsize, legend=lg, ylabel=" ", title="Total C") 
         fig[8] = plot(timet[:], all_dc[:], lw=lsize, legend=lg, ylabel=" ", title="Total DOC")
     else 
-        fig[7] = plot(timet[:], all_c[:], lw=0, legend=lg, ylabel=" ", ylim=(0,5), title="C (none)") 
-        fig[8] = plot(timet[:], all_dc[:], lw=0, legend=lg, ylabel=" ", ylim=(0,5), title="DOC (none)")
+        fig[7] = plot(timet[:], all_c[:], lw=0, legend=lg, ylabel=" ", ylim=(0,5), grid=false, title="C (none)") 
+        fig[8] = plot(timet[:], all_dc[:], lw=0, legend=lg, ylabel=" ", ylim=(0,5), grid=false, title="DOC (none)")
     end
 
     f = plot(fig..., 

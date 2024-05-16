@@ -136,9 +136,8 @@
                    0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  1.0  0.0 
                    0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  0.0  1.0  ]
             
-            # vly = 4*10e−6         # lysis rate 8*10e-12 L/virus/day (weitz et al 2015) or 2.17 * 10^-11 (2.17*10e−14 m3/virus/day - Xie et al 2022)
-            vly = 1.5
-            vbs = 23                # burst size 
+            vly = 8e-15             # m3/virus/dat (from weitz et al 2015)
+            vbs = 25                # burst size 
             vde = 0.17              # decay rate (day-1)  0.17
             vIC = ones(nv)*0.1
             # how much nitrogen per virus? get a virus quota per nitrogen i.e. mmol N / virus then convert back to mmol/day
@@ -167,7 +166,7 @@
                 vmax_i, vmax_ij, Kp_i, Kp_ij, m_lp, m_qp, CMp, Fg_p,
                 umax_i, umax_ij, Km_i, Km_ij, y_ij, m_lb, m_qb, CM, Fg_b,
                 g_max, K_g, γ, m_lz, m_qz, GrM, vly, vbs, vde, VM, 
-                fsaven, om_dist_mort, om_dist_lys, om_dist_vde, rsource, rsink, pulse
+                fsaven, om_dist_mort, om_dist_lys, om_dist_vde, rsource, rsink, pulse, graze, lysis, carbon
             )
 
 

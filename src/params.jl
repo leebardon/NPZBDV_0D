@@ -57,5 +57,8 @@ struct Prms
     rsource::Float64               # OM supply rate (mmol N/m3/day)
     rsink::Float64                 # OM sinking rate (1/day)
     pulse::Int64                   # 0 = no nutrient pulsing, 1 = periodic pulse, 2 = semi-stochastc pulse
+    graze::Int64                   # 1 = explicit grazing, 2 = implicit grazing
+    lysis::Int64                   # 1 = explicit viral lysis, 2 = implicit viral lysis (incorporated into quadratic mort term)
+    carbon::Int64                  # 1 = carbon pools included, 2 = not included
 end
 

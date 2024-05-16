@@ -56,7 +56,7 @@ function rk4(ntemp, ctemp, ptemp, ztemp, btemp, dntemp, dctemp, vtemp, prms, t, 
     dctemp .+= (dXdt1[7] .+ 2 .* dXdt2[7] .+ 2 .* dXdt3[7] .+ dXdt4[7]) .* (prms.dt / 6)
     vtemp .+= (dXdt1[8] .+ 2 .* dXdt2[8] .+ 2 .* dXdt3[8] .+ dXdt4[8]) .* (prms.dt / 6)
      
-    # Ntot = sum(ptemp) + sum(btemp) + sum(ntemp) + sum(dtemp) + sum(ztemp) + sum(vtemp)
+    # Ntot = sum(ptemp) + sum(btemp) + sum(ntemp) + sum(dntemp) + sum(ztemp) + sum(vtemp)
     # nan_or_inf(Ntot) && @error("Nan or Inf at t=$t: \n Ntot: $Ntot") 
 
     return ntemp, ctemp, ptemp, ztemp, btemp, dntemp, dctemp, vtemp
