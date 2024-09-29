@@ -289,14 +289,15 @@ function viral_lysis(prms, B, V, dVdt, dBdt, don_gain_vly, doc_gain_vly, t)
     lysis_rate = 8e-15     # m3/virus/day
     burst_size = 25        # 1 infected B cell = 25 viruses
 
-
     II, JJ = get_nonzero_axes(prms.VM)
     for j = axes(II, 1)
-        lysis_Bi = VM[II[j], JJ[j]] .* lysis_rate .* (B[JJ[j],:] * 1/Qb) .* (V[II[j],:] * 1/Qv)     # cells/m3
+        # lysis_Bi = VM[II[j], JJ[j]] .* lysis_rate .* (V[II[j],:] * 1/Qv)  .* (B[JJ[j],:] * 1/Qb)    # cells/m3  (original weitz version)
+        lysis_Bi = VM[II[j], JJ[j]] .* lysis_rate .* (V[II[j],:] * 1/Qv)  .* ((B[JJ[j],:] .* B[JJ[j],:]) * 1/Qb)     # cells/m3 quadratic version
         bacteria_loss = lysis_Bi .* Qb                                                              # cells/m3 * mmol N/cell = mmol N/m3
         viral_growth = lysis_Bi .* burst_size .* Qv                                                 # cells/m3 * 25 * mmol N/cell = mmol N/m3
         dVdt[II[j],:] += viral_growth
         dBdt[JJ[j],:] -= bacteria_loss
+
 
         released_to_dom = bacteria_loss - viral_growth
         if prms.carbon == 1

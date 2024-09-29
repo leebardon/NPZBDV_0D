@@ -15,10 +15,10 @@
         nc = 1
         np = 6
         nz = 2
-        nb = 5
-        ndn = 5
-        ndc = 5
-        nv = 5  
+        nb = 2
+        ndn = 2
+        ndc = 2
+        nv = 2  
 
         fsaven = set_savefiles(now(), years, nn, nc, np, nz, nb, ndn, ndc, nv, lysis)
         logger = set_logger(now())
@@ -41,53 +41,31 @@
     # -----------------------------------------------------------------------------------------------------------#
     #                                    HETEROTROPHIC BACTERIA PARAMS
     #------------------------------------------------------------------------------------------------------------#
-        CM = [1  0  0  0  0  
-              0  1  0  0  0 
-              0  0  1  0  0 
-              0  0  0  1  0 
-              0  0  0  0  1 ] 
+        CM = [1 1 
+              0 0 ] 
         
         y_i = ones(ndn)*0.3
         y_ij = broadcast(*, y_i, CM) 
     
-        Fg_b = ones(nb)
+        Fg_b = [1.0, 1.0]
         Fa_b = 1. .- Fg_b      
     
-        umax_i = ones(nb)      # Fg_b and umax_i are dummy vals - already provided from Emily's previous work (trade-off applied)
+        umax_i = [1.0, 1.0]      # Fg_b and umax_i are dummy vals - already provided from Emily's previous work (trade-off applied)
         Km_i = umax_i./10 
     
-        # umax_ij =  [ 32.0  0  0  0  0 
-        #              0  5.6  0  0  0 
-        #              0  0  1.0  0  0 
-        #              0  0  0  0.18  0 
-        #              0  0  0  0  0.029 ] 
+        umax_ij =  [32.0  4.0
+                    0.0  0.0 ] 
     
-        # Km_ij = [ 1.54  0  0  0  0 
-        #           0  0.28  0  0  0 
-        #           0  0  0.048  0  0 
-        #           0  0  0  0.0086  0 
-        #           0  0  0  0  0.00154 ]
-
-                      
-        umax_ij =  [ 32.0  0  0  0  0 
-                      0  5.6  0  0  0 
-                      0  0  1.0  0  0 
-                      0  0  0  0.5  0 
-                      0  0  0  0  0.18 ] 
-
-        Km_ij = [ 1.54  0  0  0  0 
-                  0  0.28  0  0  0 
-                  0  0  0.048  0  0 
-                  0  0  0  0.024 0 
-                  0  0  0  0  0.0086 ]
+        Km_ij = [1.54  0.124
+                 0.0  0.0 ]
     
     # -----------------------------------------------------------------------------------------------------------#
     #                ZOOPLANKTON PARAMS 
     #------------------------------------------------------------------------------------------------------------#
         if graze == 1
-            # GrM - first 6 cols are phyto, next are dom consuming bacteria, rows are zoo
-            GrM = [ 1.0  1.0  1.0  1.0  1.0  1.0  0.0  0.0  0.0  0.0  0.0 
-                    0.0  0.0  0.0  0.0  0.0  0.0  1.0  1.0  1.0  1.0  1.0 
+            # GrM - first 6 cols are phyto, next 1 dom consuming bacteria, rows are zoo
+            GrM = [ 1.0  1.0  1.0  1.0  1.0  1.0  0.0  0.0
+                    0.0  0.0  0.0  0.0  0.0  0.0  1.0  1.0 
                 ] ;
         
             g_max = ones(nz)
@@ -119,7 +97,7 @@
     #   ORGANIC MATTER
     #------------------------------------------------------------------------------------------------------------#
         if carbon == 1
-            cIC = ones(nc)*10.0
+            cIC = ones(nc)*20.0
             dcIC = ones(ndc)*0.1
         else
             cIC = ones(nc)*0.0
@@ -128,9 +106,9 @@
     
         # distribution of OM from mortality and lysis to detritus pools
         # viral decay amost entirely contributes to labile pool, lysis weighted to labile but includes both (walls & innards)
-        om_dist_mort = [0.07, 0.19, 0.48, 0.19, 0.07]   
-        om_dist_lys = [0.4, 0.2, 0.1, 0.1, 0.2]   
-        om_dist_vde = [0.9, 0.1, 0.0, 0.0, 0.0]  
+        om_dist_mort = [0.6, 0.4]   
+        om_dist_lys = [0.8, 0.2]   
+        om_dist_vde = [1.0, 0.0]  
     
 
     # -----------------------------------------------------------------------------------------------------------#
@@ -138,16 +116,13 @@
     #------------------------------------------------------------------------------------------------------------#
         if lysis == 1
             # virus for each B
-            VM = [ 1.0  0.0  0.0  0.0  0.0  
-                   0.0  1.0  0.0  0.0  0.0 
-                   0.0  0.0  1.0  0.0  0.0 
-                   0.0  0.0  0.0  1.0  0.0 
-                   0.0  0.0  0.0  0.0  1.0 ]
+            VM = [ 1  0
+                   0  1 ]
             
             vly = 8e-15             # m3/virus/dat (from weitz et al 2015)
             vbs = 25                # burst size 
             vde = 0.17              # decay rate (day-1)  0.17
-            vIC = ones(nv)*1.0
+            vIC = ones(nv)*0.1
             # how much nitrogen per virus? get a virus quota per nitrogen i.e. mmol N / virus then convert back to mmol/day
         else 
             VM = fill(0, (ndn, nb))
@@ -164,6 +139,8 @@
         pIC = ones(np)*0.1
         bIC = ones(nb)*0.01
         dnIC = ones(ndn)*0.1
+
+        dnIC[2] = 0.0
 
     # -----------------------------------------------------------------------------------------------------------#
     #   INITIATE PARAMS

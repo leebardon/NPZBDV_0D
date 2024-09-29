@@ -2,3 +2,5 @@
 /results/outfiles
 /logs
 /src/prescribed/old
+*.png
+*.f95

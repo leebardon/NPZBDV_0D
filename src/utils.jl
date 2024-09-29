@@ -265,6 +265,25 @@ function big_or_small(x)
 end
 
 
+function get_endpoints(vars, ds=nothing)
+
+    endpoints = Vector{Any}()
+
+    if ds !== nothing
+        for v in vars
+            append!(endpoints, [ds["$v"][:,end]])
+        end
+    else
+        for v in vars
+            append!(endpoints, [v[:,end]])
+        end
+    end
+
+    return endpoints
+end
+
+
+
 function print_info(start_time, prms, nt)
 
     @printf("\n np = %5.0f \n nb = %5.0f \n nz = %5.0f \n nn = %5.0f \n nd = %5.0f \n T = %5.0f \n\n", prms.np, prms.nb, prms.nz, prms.nn,  prms.nd, prms.tt)
