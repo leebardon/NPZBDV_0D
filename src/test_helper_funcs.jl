@@ -1,11 +1,10 @@
 
 include("CN_test_model.jl")
 
-function test_update_tracking_arrs(track_n, track_c, track_p, track_b, track_don, track_doc, track_time, ntemp, ctemp, ptemp, btemp, dontemp, doctemp, t, trec, prms)
+function test_update_tracking_arrs(track_n, track_c, track_b, track_don, track_doc, track_time, ntemp, ctemp, btemp, dontemp, doctemp, t, trec, prms)
 
     j = Int(t ÷ trec + 1)
     t_id = t .* prms.dt
-    track_p[:, j] .= ptemp
     track_b[:, j] .= btemp
     track_n[:, j] .= ntemp
     track_c[:, j] .= ctemp
@@ -15,51 +14,47 @@ function test_update_tracking_arrs(track_n, track_c, track_p, track_b, track_don
 
     @printf("Day %7.1f out of %5.0f = %4.0f%% done at %s \n", t_id, prms.days, t_id / prms.days * 100, now())
 
-    return track_n, track_c, track_p, track_b, track_don, track_doc, track_time
+    return track_n, track_c, track_b, track_don, track_doc, track_time
 
 end
 
 
-function rk4_integrate(ntemp, ctemp, ptemp, btemp, dontemp, doctemp, prms)
+function rk4_integrate(ntemp, ctemp, btemp, dontemp, doctemp, prms)
 
-    dXdt1 = model_functions(ntemp, ctemp, ptemp, btemp, dontemp, doctemp, prms)
+    dXdt1 = model_functions(ntemp, ctemp, btemp, dontemp, doctemp, prms)
 
     track_n1 = ntemp .+ prms.dt / 2 .* dXdt1[1]
     track_c1 = ctemp .+ prms.dt / 2 .* dXdt1[2]
-    track_p1 = ptemp .+ prms.dt / 2 .* dXdt1[3]
-    track_b1 = btemp .+ prms.dt / 2 .* dXdt1[4]
-    track_dn1 = dontemp .+ prms.dt / 2 .* dXdt1[5]
-    track_dc1 = doctemp .+ prms.dt / 2 .* dXdt1[6]
+    track_b1 = btemp .+ prms.dt / 2 .* dXdt1[3]
+    track_dn1 = dontemp .+ prms.dt / 2 .* dXdt1[4]
+    track_dc1 = doctemp .+ prms.dt / 2 .* dXdt1[5]
 
-    dXdt2 = model_functions(track_n1, track_c1, track_p1, track_b1, track_dn1, track_dc1, prms)
+    dXdt2 = model_functions(track_n1, track_c1, track_b1, track_dn1, track_dc1, prms)
 
     track_n2 = ntemp .+ prms.dt / 2 .* dXdt2[1]
     track_c2 = ctemp .+ prms.dt / 2 .* dXdt2[2]
-    track_p2 = ptemp .+ prms.dt / 2 .* dXdt2[3]
-    track_b2 = btemp .+ prms.dt / 2 .* dXdt2[4]
-    track_dn2 = dontemp .+ prms.dt / 2 .* dXdt2[5]
-    track_dc2 = doctemp .+ prms.dt / 2 .* dXdt2[6]
+    track_b2 = btemp .+ prms.dt / 2 .* dXdt2[3]
+    track_dn2 = dontemp .+ prms.dt / 2 .* dXdt2[4]
+    track_dc2 = doctemp .+ prms.dt / 2 .* dXdt2[5]
 
-    dXdt3 = model_functions(track_n2, track_c2, track_p2, track_b2, track_dn2, track_dc2, prms)
+    dXdt3 = model_functions(track_n2, track_c2, track_b2, track_dn2, track_dc2, prms)
 
     track_n3 = ntemp .+ prms.dt .* dXdt3[1]
     track_c3 = ctemp .+ prms.dt .* dXdt3[2]
-    track_p3 = ptemp .+ prms.dt .* dXdt3[3]
-    track_b3 = btemp .+ prms.dt .* dXdt3[4]
-    track_dn3 = dontemp .+ prms.dt .* dXdt3[5]
-    track_dc3 = doctemp .+ prms.dt .* dXdt3[6]
+    track_b3 = btemp .+ prms.dt .* dXdt3[3]
+    track_dn3 = dontemp .+ prms.dt .* dXdt3[4]
+    track_dc3 = doctemp .+ prms.dt .* dXdt3[5]
 
-    dXdt4 = model_functions(track_n3, track_c3, track_p3, track_b3, track_dn3, track_dc3, prms)
+    dXdt4 = model_functions(track_n3, track_c3, track_b3, track_dn3, track_dc3, prms)
 
     ntemp .+= (dXdt1[1] .+ 2 .* dXdt2[1] .+ 2 .* dXdt3[1] .+ dXdt4[1]) .* (prms.dt / 6)
     ctemp .+= (dXdt1[2] .+ 2 .* dXdt2[2] .+ 2 .* dXdt3[2] .+ dXdt4[2]) .* (prms.dt / 6)
-    ptemp .+= (dXdt1[3] .+ 2 .* dXdt2[3] .+ 2 .* dXdt3[3] .+ dXdt4[3]) .* (prms.dt / 6)
-    btemp .+= (dXdt1[4] .+ 2 .* dXdt2[4] .+ 2 .* dXdt3[4] .+ dXdt4[4]) .* (prms.dt / 6)
-    dontemp .+= (dXdt1[5] .+ 2 .* dXdt2[5] .+ 2 .* dXdt3[5] .+ dXdt4[5]) .* (prms.dt / 6)
-    doctemp .+= (dXdt1[6] .+ 2 .* dXdt2[6] .+ 2 .* dXdt3[6] .+ dXdt4[6]) .* (prms.dt / 6)
+    btemp .+= (dXdt1[3] .+ 2 .* dXdt2[3] .+ 2 .* dXdt3[3] .+ dXdt4[3]) .* (prms.dt / 6)
+    dontemp .+= (dXdt1[4] .+ 2 .* dXdt2[4] .+ 2 .* dXdt3[4] .+ dXdt4[4]) .* (prms.dt / 6)
+    doctemp .+= (dXdt1[5] .+ 2 .* dXdt2[5] .+ 2 .* dXdt3[5] .+ dXdt4[5]) .* (prms.dt / 6)
 
 
-    return ntemp, ctemp, ptemp, btemp, dontemp, doctemp
+    return ntemp, ctemp, btemp, dontemp, doctemp
 
 
 end
