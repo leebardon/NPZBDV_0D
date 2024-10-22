@@ -19,9 +19,9 @@ function test_update_tracking_arrs(track_n, track_c, track_b, track_don, track_d
 end
 
 
-function rk4_integrate(ntemp, ctemp, btemp, dontemp, doctemp, prms)
+function rk4_integrate(ntemp, ctemp, btemp, dontemp, doctemp, prms, t)
 
-    dXdt1 = model_functions(ntemp, ctemp, btemp, dontemp, doctemp, prms)
+    dXdt1 = model_functions(ntemp, ctemp, btemp, dontemp, doctemp, prms, t)
 
     track_n1 = ntemp .+ prms.dt / 2 .* dXdt1[1]
     track_c1 = ctemp .+ prms.dt / 2 .* dXdt1[2]
@@ -29,7 +29,7 @@ function rk4_integrate(ntemp, ctemp, btemp, dontemp, doctemp, prms)
     track_dn1 = dontemp .+ prms.dt / 2 .* dXdt1[4]
     track_dc1 = doctemp .+ prms.dt / 2 .* dXdt1[5]
 
-    dXdt2 = model_functions(track_n1, track_c1, track_b1, track_dn1, track_dc1, prms)
+    dXdt2 = model_functions(track_n1, track_c1, track_b1, track_dn1, track_dc1, prms, t)
 
     track_n2 = ntemp .+ prms.dt / 2 .* dXdt2[1]
     track_c2 = ctemp .+ prms.dt / 2 .* dXdt2[2]
@@ -37,7 +37,7 @@ function rk4_integrate(ntemp, ctemp, btemp, dontemp, doctemp, prms)
     track_dn2 = dontemp .+ prms.dt / 2 .* dXdt2[4]
     track_dc2 = doctemp .+ prms.dt / 2 .* dXdt2[5]
 
-    dXdt3 = model_functions(track_n2, track_c2, track_b2, track_dn2, track_dc2, prms)
+    dXdt3 = model_functions(track_n2, track_c2, track_b2, track_dn2, track_dc2, prms, t)
 
     track_n3 = ntemp .+ prms.dt .* dXdt3[1]
     track_c3 = ctemp .+ prms.dt .* dXdt3[2]
@@ -45,7 +45,7 @@ function rk4_integrate(ntemp, ctemp, btemp, dontemp, doctemp, prms)
     track_dn3 = dontemp .+ prms.dt .* dXdt3[4]
     track_dc3 = doctemp .+ prms.dt .* dXdt3[5]
 
-    dXdt4 = model_functions(track_n3, track_c3, track_b3, track_dn3, track_dc3, prms)
+    dXdt4 = model_functions(track_n3, track_c3, track_b3, track_dn3, track_dc3, prms, t)
 
     ntemp .+= (dXdt1[1] .+ 2 .* dXdt2[1] .+ 2 .* dXdt3[1] .+ dXdt4[1]) .* (prms.dt / 6)
     ctemp .+= (dXdt1[2] .+ 2 .* dXdt2[2] .+ 2 .* dXdt3[2] .+ dXdt4[2]) .* (prms.dt / 6)

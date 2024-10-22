@@ -11,35 +11,42 @@ function run_CN_test(prms)
 
     # Generate empty arrays
     nrec1 = Int(prms.nrec + 1)
+    track_b = Array{Float64,2}(undef, prms.nb, nrec1)
     track_n = Array{Float64,2}(undef, prms.nn, nrec1)
     track_c = Array{Float64,2}(undef, prms.nc, nrec1)
-    track_b = Array{Float64,2}(undef, prms.nb, nrec1)
     track_don = Array{Float64,2}(undef, prms.ndon, nrec1)
     track_doc = Array{Float64,2}(undef, prms.ndoc, nrec1)
     track_time = Array{Float64,1}(undef, nrec1)
 
+    track_b[:, 1] .= prms.bIC
     track_n[:, 1] .= prms.nIC
     track_c[:, 1] .= prms.cIC
-    track_b[:, 1] .= prms.bIC
     track_don[:, 1] .= prms.donIC
     track_doc[:, 1] .= prms.docIC
 
     track_time[1] = 0
 
     #-------------------- Initial conditions at time t = 0
-    btemp = copy(prms.bIC)
     ntemp = copy(prms.nIC)
     ctemp = copy(prms.cIC)
+    btemp = copy(prms.bIC)
     dontemp = copy(prms.donIC)
     doctemp = copy(prms.docIC)
 
+    start_n, start_c = [], []
+    global clim_count = 0 
+    global nlim_count = 0
 
     for t = 1:prms.nt
 
-        ntemp, ctemp, btemp, dontemp, doctemp = rk4_integrate(ntemp, ctemp, btemp, dontemp, doctemp, prms)
+        ntemp, ctemp, btemp, dontemp, doctemp = rk4_integrate(ntemp, ctemp, btemp, dontemp, doctemp, prms, t)
+
+        if t == 100
+            push!(start_n, (sum(ntemp) + sum(dontemp) + sum(btemp)))
+            push!(start_c, (sum(ctemp) + sum(doctemp) + sum(btemp) * prms.CNr))
+        end
 
         if mod(t, trec) == 0
-
             track_n, track_c, track_b, track_don, track_doc, track_time = test_update_tracking_arrs(track_n, track_c, track_b, track_don, track_doc, track_time,
                 ntemp, ctemp, btemp, dontemp, doctemp, t, trec, prms)
 
@@ -47,12 +54,13 @@ function run_CN_test(prms)
             tot_c = sum(ctemp) + sum(doctemp) + (sum(btemp) * prms.CNr)
             println("Total N: ", tot_n)
             println("Total C: ", tot_c)
-
         end
-
 
         if t == nt
             end_time = now()
+            println("\nStart N: ", start_n[1])
+            println("Start C: ", start_c[1])
+            println("Clim = ", clim_count, "\nNlim = ", nlim_count)
             # f = plot(dontemp, doctemp)
             # savefig(f, "dum_fig.jpg")
         end
@@ -64,7 +72,7 @@ function run_CN_test(prms)
 end
 
 
-function model_functions(N, C, B, DON, DOC, prms)
+function model_functions(N, C, B, DON, DOC, prms, t)
 
     dNdt = zeros(Float64, prms.nn)
     dCdt = zeros(Float64, prms.nc)
@@ -75,12 +83,12 @@ function model_functions(N, C, B, DON, DOC, prms)
     DON_gain_mort = zeros(Float64, 1)
     DOC_gain_mort = zeros(Float64, 1)
 
-    # DIN and DIC supply (turn off rsource and rsink to check if conserving)
-    dNdt .+= prms.rsource * (1 / prms.CNr)
-    dCdt .+= prms.rsource * (1 - (1 / prms.CNr))
+    # DIN and DIC supply (set rsource and rsink to zero check if conserving)
+    dNdt .+= prms.rsource
+    dCdt .+= prms.rsource
 
     # bacteria uptake
-    dDONdt, dDOCdt, dBdt, dNdt, dCdt = bacteria_uptake(prms, N, B, DON, DOC, dDONdt, dDOCdt, dBdt, dNdt, dCdt)
+    dDONdt, dDOCdt, dBdt, dNdt, dCdt = bacteria_uptake(prms, N, B, DON, DOC, dDONdt, dDOCdt, dBdt, dNdt, dCdt, t)
 
     #bacterial mortality
     dBdt, DON_gain_mort, DOC_gain_mort = bacterial_mortality(prms, B, dBdt, DON_gain_mort, DOC_gain_mort)
@@ -93,50 +101,50 @@ function model_functions(N, C, B, DON, DOC, prms)
 end
 
 
-function bacteria_uptake(prms, N, B, DON, DOC, dDONdt, dDOCdt, dBdt, dNdt, dCdt)
-    #NOTE for every 1 N excreted, CNr * C is respired
-    # uptake rate controlled by limiting substrate (DOC or DON)
+function bacteria_uptake(prms, N, B, DON, DOC, dDONdt, dDOCdt, dBdt, dNdt, dCdt, t)
 
     II, JJ = get_nonzero_axes(prms.CM)
 
     for j = axes(II, 1)
-        # DON and DOC uptake and remineralization (1 - yield)
-        muDON = prms.umax_ij[II[j], JJ[j]] .* DON ./ (DON .+ prms.Km_ij[II[j], JJ[j]])
-        muDOC = prms.umax_ij[II[j], JJ[j]] .* DOC ./ (DOC .+ prms.Km_ij[II[j], JJ[j]])
-        muN = prms.umax_ij[II[j], JJ[j]] .* N ./ (N .+ prms.Km_ij[II[j], JJ[j]])
 
-        # Check if growth limited by DOC or DON+N (what about DIC?)
         yield = prms.y_ij[II[j], JJ[j]]
-        mu = min.(yield .* muDOC, muDON .+ muN)
-        growth = B[JJ[j], :] .* mu
+        umax = prms.umax_ij[II[j], JJ[j]]
+        Km = prms.Km_ij[II[j], JJ[j]]
+        CNr = prms.CNr
 
-        mu_Norg = min.(yield .* muDOC, muDON)
+        # Potential uptake rates for DON, DOC and N (DIN) - assume C (DIC) is not limiting
+        muDON = umax .* DON ./ (DON .+ Km)
+        muDOC = umax .* DOC ./ (DOC .+ Km)
 
-        R_NC = 1 / 5  # ratio of N to C in biomass
-        uptakeN = min.(muN, max.((mu - mu_Norg), 0)) .* B[JJ[j], :] .* R_NC
+        # Actual growth rate (mu) and production (mu*B) according to limiting resource
+        # mu = min.(yield .* muDOC, muDON)
 
-        # OM-limited growth rates needed for uptake of OM calc
-        growth_Norg = mu_Norg .* B[JJ[j], :] .* R_NC
+        if (yield .* muDOC) < muDON
+            mu = yield .* muDOC
+            global clim_count += 1
+        else
+            mu = muDON
+            global nlim_count += 1
+        end
 
-        EPS = 0.1 #     DUMMY VALUE - to prevent nuerical error for fortran code 
-        # calculate the ratios of DON/DOC etc. uptake
-        Rup_NC = min.(R_NC, (muDON ./ (muDOC .+ EPS)))
+        growth = B[JJ[j], :] .* mu 
 
-        # Here is uptake and excretion of inorganic nutrients (i.e. sinks in equations for DOC and DON)
-        uptakeDOC = growth ./ yield
+        # calculate the ratios of DOC/DON etc. uptake - 1/CNr is NC of biomass, muDON/muDOC is NC of env
+        Rup_NC = min.(1/CNr, (muDON ./ muDOC))
+
+        # Uptake and excretion of inorganic nutrients (i.e. sinks in equations for DOC and DON)
+        uptakeDOC = (growth .* (1/Rup_NC)) ./ yield
         uptakeDON = uptakeDOC .* Rup_NC
+        respDOC = (growth .* (1/Rup_NC)) .* (1 ./ yield - 1) 
+        respDON = uptakeDON - growth 
 
-        # "respDOC" and "respDON" are the remin. sources so go into DIC and NH4 pools 
-        respDOC = growth * (1 ./ yield - 1)
-        respDON = uptakeDON - growth_Norg
-
-        dBdt[JJ[j], :] .+= growth
+        dBdt[JJ[j], :] += growth
         dDONdt[II[j], :] -= uptakeDON
         dDOCdt[II[j], :] -= uptakeDOC
 
         # proportion remineralized
         dNdt += respDON
-        dCdt += respDOC
+        dCdt += respDOC 
     end
 
     return dDONdt, dDOCdt, dBdt, dNdt, dCdt
@@ -148,8 +156,8 @@ function bacterial_mortality(prms, B, dBdt, DON_gain_mort, DOC_gain_mort)
     bmort = (prms.m_lb .+ prms.m_qb .* B) .* B
     dBdt -= bmort
 
-    DON_gain_mort .+= sum(bmort) * (1 / prms.CNr)
-    DOC_gain_mort .+= sum(bmort) * (1 - (1 / prms.CNr))
+    DON_gain_mort .+= sum(bmort)
+    DOC_gain_mort .+= sum(bmort) .* prms.CNr
 
     return dBdt, DON_gain_mort, DOC_gain_mort
 
@@ -180,3 +188,11 @@ end
 
 
 
+# For DIN
+# muN = umax .* N ./ (N .+ Km)
+# mu = min.(yield .* muDOC, muDON .+ muN)
+
+# OM-limited growth rates needed for uptake of OM calc
+# mu_Norg = min.(yield .* muDOC, muDON)
+# growth_Norg = B[JJ[j], :] .* mu_Norg
+# uptakeN = min.(muN, max.((mu - mu_OM), 0)) .* B[JJ[j], :] .* (1/CNr)
