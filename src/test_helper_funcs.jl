@@ -1,7 +1,7 @@
 
 include("CN_test_model.jl")
 
-function test_update_tracking_arrs(track_n, track_c, track_b, track_don, track_doc, track_time, ntemp, ctemp, btemp, dontemp, doctemp, t, trec, prms)
+function test_update_tracking_arrs(track_n, track_c, track_b, track_don, track_doc, track_c2n, track_time, ntemp, ctemp, btemp, dontemp, doctemp, t, trec, prms)
 
     j = Int(t ÷ trec + 1)
     t_id = t .* prms.dt
@@ -10,11 +10,12 @@ function test_update_tracking_arrs(track_n, track_c, track_b, track_don, track_d
     track_c[:, j] .= ctemp
     track_don[:, j] .= dontemp
     track_doc[:, j] .= doctemp
+    track_c2n[:, j] .= doctemp ./ dontemp
     track_time[j] = t_id
 
     @printf("Day %7.1f out of %5.0f = %4.0f%% done at %s \n", t_id, prms.days, t_id / prms.days * 100, now())
 
-    return track_n, track_c, track_b, track_don, track_doc, track_time
+    return track_n, track_c, track_b, track_don, track_doc, track_c2n, track_time
 
 end
 

@@ -1,30 +1,35 @@
 using Printf
-using Dates
+using Dates, Plots
 using NCDatasets
 using SparseArrays, LinearAlgebra
 
+global DON_source = 0.06
+global DOC_source = 1.0
+global OM_sink = 1.0
 
 function run_CN_test(prms)
 
     start_time = now()
     trec = prms.nt ÷ prms.nrec
 
-    # Generate empty arrays
+    # Generate empty tracking arrays
     nrec1 = Int(prms.nrec + 1)
-    track_b = Array{Float64,2}(undef, prms.nb, nrec1)
-    track_n = Array{Float64,2}(undef, prms.nn, nrec1)
-    track_c = Array{Float64,2}(undef, prms.nc, nrec1)
-    track_don = Array{Float64,2}(undef, prms.ndon, nrec1)
-    track_doc = Array{Float64,2}(undef, prms.ndoc, nrec1)
-    track_time = Array{Float64,1}(undef, nrec1)
+    trk_b = Array{Float64,2}(undef, prms.nb, nrec1)
+    trk_n = Array{Float64,2}(undef, prms.nn, nrec1)
+    trk_c = Array{Float64,2}(undef, prms.nc, nrec1)
+    trk_don = Array{Float64,2}(undef, prms.ndon, nrec1)
+    trk_doc = Array{Float64,2}(undef, prms.ndoc, nrec1)
+    trk_c2n = Array{Float64,2}(undef, prms.nn, nrec1)
+    trk_time = Array{Float64,1}(undef, nrec1)
 
-    track_b[:, 1] .= prms.bIC
-    track_n[:, 1] .= prms.nIC
-    track_c[:, 1] .= prms.cIC
-    track_don[:, 1] .= prms.donIC
-    track_doc[:, 1] .= prms.docIC
+    trk_b[:, 1] .= prms.bIC
+    trk_n[:, 1] .= prms.nIC
+    trk_c[:, 1] .= prms.cIC
+    trk_don[:, 1] .= prms.donIC
+    trk_doc[:, 1] .= prms.docIC
+    trk_c2n[:, 1] .= prms.c2nIC
 
-    track_time[1] = 0
+    trk_time[1] = 0
 
     #-------------------- Initial conditions at time t = 0
     ntemp = copy(prms.nIC)
@@ -34,8 +39,8 @@ function run_CN_test(prms)
     doctemp = copy(prms.docIC)
 
     start_n, start_c = [], []
-    global clim_count = 0 
-    global nlim_count = 0
+    # global clim_count = 0
+    # global nlim_count = 0
 
     for t = 1:prms.nt
 
@@ -47,7 +52,7 @@ function run_CN_test(prms)
         end
 
         if mod(t, trec) == 0
-            track_n, track_c, track_b, track_don, track_doc, track_time = test_update_tracking_arrs(track_n, track_c, track_b, track_don, track_doc, track_time,
+            trk_n, trk_c, trk_b, trk_don, trk_doc, trk_c2n, trk_time = test_update_tracking_arrs(trk_n, trk_c, trk_b, trk_don, trk_doc, trk_c2n, trk_time,
                 ntemp, ctemp, btemp, dontemp, doctemp, t, trec, prms)
 
             tot_n = sum(ntemp) + sum(dontemp) + sum(btemp)
@@ -60,14 +65,18 @@ function run_CN_test(prms)
             end_time = now()
             println("\nStart N: ", start_n[1])
             println("Start C: ", start_c[1])
-            println("Clim = ", clim_count, "\nNlim = ", nlim_count)
-            # f = plot(dontemp, doctemp)
-            # savefig(f, "dum_fig.jpg")
+            # println("Clim = ", clim_count, "\nNlim = ", nlim_count)
+            
+            f = plot(trk_time[:], trk_c2n[:], grid=false, label=false, lw=3, xlabel="Days", ylabel="DOC/DON", title="DOC/DON Source = $DOC_source/$DON_source ")
+            savefig(f, "dum_fig.png")
+
+            println(trk_c2n[1])
+            println(trk_c2n[end])
         end
     end
 
 
-    return ntemp, ctemp, btemp, dontemp, doctemp, track_time
+    return ntemp, ctemp, btemp, dontemp, doctemp, trk_time
 
 end
 
@@ -83,9 +92,12 @@ function model_functions(N, C, B, DON, DOC, prms, t)
     DON_gain_mort = zeros(Float64, 1)
     DOC_gain_mort = zeros(Float64, 1)
 
-    # DIN and DIC supply (set rsource and rsink to zero check if conserving)
+    # DIN and DIC supply and sink (set rsource and rsink to zero check if conserving)
     dNdt .+= prms.rsource
     dCdt .+= prms.rsource
+
+    dDONdt .+= DON_source
+    dDOCdt .+= DOC_source
 
     # bacteria uptake
     dDONdt, dDOCdt, dBdt, dNdt, dCdt = bacteria_uptake(prms, N, B, DON, DOC, dDONdt, dDOCdt, dBdt, dNdt, dCdt, t)
@@ -121,30 +133,28 @@ function bacteria_uptake(prms, N, B, DON, DOC, dDONdt, dDOCdt, dBdt, dNdt, dCdt,
 
         if (yield .* muDOC) < muDON
             mu = yield .* muDOC
-            global clim_count += 1
+            # global clim_count += 1
         else
             mu = muDON
-            global nlim_count += 1
+            # global nlim_count += 1
         end
 
-        growth = B[JJ[j], :] .* mu 
+        growth = B[JJ[j], :] .* mu
 
-        # calculate the ratios of DOC/DON etc. uptake - 1/CNr is NC of biomass, muDON/muDOC is NC of env
-        Rup_NC = min.(1/CNr, (muDON ./ muDOC))
+        # calculate whether the uptake ratio of N:C is limited by NC of biomass (1/CNr) of env (muDON/muDOC)
+        up_NC = min.(1 / CNr, (muDON ./ muDOC)) # should probs use up_CN for clarity)
 
-        # Uptake and excretion of inorganic nutrients (i.e. sinks in equations for DOC and DON)
-        uptakeDOC = (growth .* (1/Rup_NC)) ./ yield
-        uptakeDON = uptakeDOC .* Rup_NC
-        respDOC = (growth .* (1/Rup_NC)) .* (1 ./ yield - 1) 
-        respDON = uptakeDON - growth 
+        # Uptake and excretion (i.e. sinks in equations for DOC and DON)
+        uptakeDOC = (growth .* (1 ./ up_NC)) ./ yield
+        uptakeDON = uptakeDOC .* up_NC
+        respDOC = (growth .* (1 ./ up_NC)) .* (1 ./ yield - 1)
+        respDON = uptakeDON - growth
 
         dBdt[JJ[j], :] += growth
         dDONdt[II[j], :] -= uptakeDON
         dDOCdt[II[j], :] -= uptakeDOC
-
-        # proportion remineralized
         dNdt += respDON
-        dCdt += respDOC 
+        dCdt += respDOC
     end
 
     return dDONdt, dDOCdt, dBdt, dNdt, dCdt
@@ -167,10 +177,12 @@ end
 function total_change_in_d(prms, DON, DOC, dDONdt, dDOCdt, DON_gain_mort, DOC_gain_mort)
 
     dDONdt += DON_gain_mort .* prms.om_dist_mort
-    dDONdt -= DON .* prms.rsink
+    # dDONdt -= DON .* prms.rsink
+    dDONdt -= DON .* OM_sink
 
     dDOCdt += DOC_gain_mort .* prms.om_dist_mort
-    dDOCdt -= DOC .* prms.rsink
+    # dDOCdt -= DOC .* prms.rsink
+    dDOCdt -= DOC .* OM_sink
 
     return dDONdt, dDOCdt
 

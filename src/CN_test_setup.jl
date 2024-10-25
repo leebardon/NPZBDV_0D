@@ -13,7 +13,7 @@ ndon = 1
 ndoc = 1
 nb = 1
 
-years = 5
+years = 1
 days = years * 366
 nrec = days * 20
 dt = 0.01
@@ -54,12 +54,13 @@ cIC = ones(nc) * 10.0
 bIC = ones(nb) * 0.1
 donIC = ones(ndon) * 1.0
 docIC = ones(ndoc) * 5.0
+c2nIC = docIC ./ donIC
 
 # -----------------------------------------------------------------------------------------------------------#
 #   INITIATE PARAMS
 #------------------------------------------------------------------------------------------------------------#
-rsource = 0
-rsink = 0
+rsource = 0.0
+rsink = 0.0
 CNr = 5
 
 struct test_params
@@ -79,6 +80,7 @@ struct test_params
     bIC::Array{Float64,1}          # initial condition for b at time 0
     donIC::Array{Float64,1}        # initial condition for don at time 0
     docIC::Array{Float64,1}        # initial condition for doc at time 0
+    c2nIC::Array{Float64,1}        # initial ratio of DOC to DON
     umax_i::Array{Float64,1}       # max uptake rate overall for d_i
     umax_ij::Array{Float64,2}      # max uptake rate of bacteria j on d_i
     Km_i::Array{Float64,1}         # half saturation rate overall for d_i 
@@ -96,7 +98,7 @@ end
 
 params = test_params(
     CNr, years, days, nrec, dt, nt,
-    nn, nc, nb, ndon, ndoc, nIC, cIC, bIC, donIC, docIC,
+    nn, nc, nb, ndon, ndoc, nIC, cIC, bIC, donIC, docIC, c2nIC,
     umax_i, umax_ij, Km_i, Km_ij, y_ij, m_lb, m_qb, CM, Fg_b,
     om_dist_mort, rsource, rsink
 )
