@@ -3,10 +3,6 @@ using Dates, Plots
 using NCDatasets
 using SparseArrays, LinearAlgebra
 
-global DON_source = 0.06
-global DOC_source = 1.0
-global OM_sink = 1.0
-
 function run_CN_test(prms)
 
     start_time = now()
@@ -67,11 +63,26 @@ function run_CN_test(prms)
             println("Start C: ", start_c[1])
             # println("Clim = ", clim_count, "\nNlim = ", nlim_count)
             
-            f = plot(trk_time[:], trk_c2n[:], grid=false, label=false, lw=3, xlabel="Days", ylabel="DOC/DON", title="DOC/DON Source = $DOC_source/$DON_source ")
+            fig = Array{Plots.Plot, 1}(undef, 2);
+            fig[1] = plot(trk_time[:], trk_c2n[:], grid=false, label=false, lw=5, lc="purple", xlabel="Days", ylabel="DOC/DON", 
+            title="DOC/DON Source = $DOC_source/$DON_source ");
+            fig[2] = plot(trk_time[:], trk_b[1, :], grid=false, label=" B1", lw=5, xlabel="Days", ylabel="mmol N/m3", 
+            title="B conc."); 
+
+            if prms.nb > 1
+                for i in 2:prms.nb
+                    plot!(trk_time[:], trk_b[i, :], lw=5, label = " B$i")
+                end
+            end
+
+            f = plot(fig..., 
+            fg_legend = :transparent,
+            layout = (1,2),
+            size=(700,350),
+            )
+        
             savefig(f, "dum_fig.png")
 
-            println(trk_c2n[1])
-            println(trk_c2n[end])
         end
     end
 
@@ -96,8 +107,8 @@ function model_functions(N, C, B, DON, DOC, prms, t)
     dNdt .+= prms.rsource
     dCdt .+= prms.rsource
 
-    dDONdt .+= DON_source
-    dDOCdt .+= DOC_source
+    dDONdt .+= prms.DON_source
+    dDOCdt .+= prms.DOC_source
 
     # bacteria uptake
     dDONdt, dDOCdt, dBdt, dNdt, dCdt = bacteria_uptake(prms, N, B, DON, DOC, dDONdt, dDOCdt, dBdt, dNdt, dCdt, t)
@@ -120,39 +131,39 @@ function bacteria_uptake(prms, N, B, DON, DOC, dDONdt, dDOCdt, dBdt, dNdt, dCdt,
     for j = axes(II, 1)
 
         yield = prms.y_ij[II[j], JJ[j]]
-        umax = prms.umax_ij[II[j], JJ[j]]
+        Vmax = prms.Vmax_ij[II[j], JJ[j]]
         Km = prms.Km_ij[II[j], JJ[j]]
         CNr = prms.CNr
 
-        # Potential uptake rates for DON, DOC and N (DIN) - assume C (DIC) is not limiting
-        muDON = umax .* DON ./ (DON .+ Km)
-        muDOC = umax .* DOC ./ (DOC .+ Km)
+        # Potential uptake rates (Vp) for DON, DOC and N (DIN) - assume C (DIC) is not limiting
+        Vp_DON = Vmax .* DON ./ (DON .+ Km)
+        Vp_DOC = Vmax .* DOC ./ (DOC .+ Km)
 
-        # Actual growth rate (mu) and production (mu*B) according to limiting resource
-        # mu = min.(yield .* muDOC, muDON)
+        # Actual growth rate (mu) and growth/production (mu*B) according to limiting resource
+        # mu = min.(yield .* Vp_DOC, Vp_DON)
 
-        if (yield .* muDOC) < muDON
-            mu = yield .* muDOC
+        if (yield .* Vp_DOC) < Vp_DON
+            mu = yield .* Vp_DOC
             # global clim_count += 1
         else
-            mu = muDON
+            mu = Vp_DON
             # global nlim_count += 1
         end
 
         growth = B[JJ[j], :] .* mu
 
         # calculate whether the uptake ratio of N:C is limited by NC of biomass (1/CNr) of env (muDON/muDOC)
-        up_NC = min.(1 / CNr, (muDON ./ muDOC)) # should probs use up_CN for clarity)
+        up_CN = min.(CNr, (Vp_DON ./ Vp_DOC)) 
 
         # Uptake and excretion (i.e. sinks in equations for DOC and DON)
-        uptakeDOC = (growth .* (1 ./ up_NC)) ./ yield
-        uptakeDON = uptakeDOC .* up_NC
-        respDOC = (growth .* (1 ./ up_NC)) .* (1 ./ yield - 1)
-        respDON = uptakeDON - growth
+        V_DOC = (growth .* up_CN) ./ yield
+        V_DON = V_DOC .* ( 1 ./ up_CN )
+        respDOC = (growth .* up_CN) .* (1 ./ yield - 1)
+        respDON = V_DON - growth
 
         dBdt[JJ[j], :] += growth
-        dDONdt[II[j], :] -= uptakeDON
-        dDOCdt[II[j], :] -= uptakeDOC
+        dDONdt[II[j], :] -= V_DON
+        dDOCdt[II[j], :] -= V_DOC
         dNdt += respDON
         dCdt += respDOC
     end
@@ -178,11 +189,11 @@ function total_change_in_d(prms, DON, DOC, dDONdt, dDOCdt, DON_gain_mort, DOC_ga
 
     dDONdt += DON_gain_mort .* prms.om_dist_mort
     # dDONdt -= DON .* prms.rsink
-    dDONdt -= DON .* OM_sink
+    dDONdt -= DON .* prms.OM_sink
 
     dDOCdt += DOC_gain_mort .* prms.om_dist_mort
     # dDOCdt -= DOC .* prms.rsink
-    dDOCdt -= DOC .* OM_sink
+    dDOCdt -= DOC .* prms.OM_sink
 
     return dDONdt, dDOCdt
 
@@ -201,7 +212,7 @@ end
 
 
 # For DIN
-# muN = umax .* N ./ (N .+ Km)
+# muN = vmax .* N ./ (N .+ Km)
 # mu = min.(yield .* muDOC, muDON .+ muN)
 
 # OM-limited growth rates needed for uptake of OM calc
